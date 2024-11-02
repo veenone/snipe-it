@@ -106,6 +106,23 @@
             </div>
           </div>
 
+            <!--  Category Selector -->
+          <div class="form-group {{ $errors->has('field_category') ? ' has-error' : '' }}">
+          <label for="field_category" class="col-md-3 control-label">
+              {{ trans('admin/custom_fields/general.field_category') }}
+            </label>
+              @php
+              $field_category = '';
+              if (stripos($field->format, 'regex') === 0){
+                $field_category = 'CUSTOM REGEX';
+              }
+              @endphp
+            <div class="col-md-8 required">
+              {{ Form::select("format",Helper::predefined_formats(), ($field_category == '') ? $field->format : $field_category, array('class'=>'format select2 form-control', 'aria-label'=>'format', 'style' => 'width:100%;')) }}
+              {!! $errors->first('format', '<span class="alert-msg" aria-hidden="true"><i class="fas fa-times" aria-hidden="true"></i> :message</span>') !!}
+            </div>
+          </div>
+
           <!-- Help Text -->
           <div class="form-group {{ $errors->has('help_text') ? ' has-error' : '' }}">
               <label for="help_text" class="col-md-3 control-label">

@@ -13,102 +13,124 @@
 @section('content')
 
 @can('view', \App\Models\CustomFieldset::class)
-<div class="row">
-  <div class="col-md-12">
-    <div class="box box-default">
+<div class="nav-tabs-custom"> 
+  <ul class="nav nav-tabs"> 
+    <li class="active"> <a href="#asset_custom_fields_tab" data-toggle="tab">{{ trans('admin/custom_fields/general.custom_fields') }}</a></li> 
+    <li><a href="#consumables_category_custom_fields_tab" data-toggle="tab">{{ trans('admin/custom_fields/general.consumable_custom_fields') }}</a></li> 
+  </ul>
+  <div class="tab-content"> 
+    <div class="tab-pane active" id="asset_custom_fields_tab">
+      <div class="row">
+        <div class="col-md-12">
+          <div class="box box-default">
 
-      <div class="box-header with-border">
-        <h2 class="box-title">{{ trans('admin/custom_fields/general.fieldsets') }}</h2>
-        <div class="box-tools pull-right">
-          @can('create', \App\Models\CustomFieldset::class)
-          <a href="{{ route('fieldsets.create') }}" class="btn btn-sm btn-primary" data-tooltip="true" title="{{ trans('admin/custom_fields/general.create_fieldset_title') }}">{{ trans('admin/custom_fields/general.create_fieldset') }}</a>
-          @endcan
+            <div class="box-header with-border">
+              <h2 class="box-title">{{ trans('admin/custom_fields/general.fieldsets') }}</h2>
+              <div class="box-tools pull-right">
+                @can('create', \App\Models\CustomFieldset::class)
+                <a href="{{ route('fieldsets.create') }}" class="btn btn-sm btn-primary" data-tooltip="true" title="{{ trans('admin/custom_fields/general.create_fieldset_title') }}">{{ trans('admin/custom_fields/general.create_fieldset') }}</a>
+                @endcan
+              </div>
+            </div><!-- /.box-header -->
+
+            <div class="box-body">
+              <table
+                      data-cookie-id-table="customFieldsetsTable"
+                      data-id-table="customFieldsetsTable"
+                      data-search="true"
+                      data-side-pagination="client"
+                      data-show-columns="true"
+                      data-show-export="true"
+                      data-show-refresh="true"
+                      data-sort-order="asc"
+                      data-sort-name="name"
+                      id="customFieldsTable"
+                      class="table table-striped snipe-table"
+                      data-export-options='{
+                      "fileName": "export-fieldsets-{{ date('Y-m-d') }}",
+                      "ignoreColumn": ["actions","image","change","checkbox","checkincheckout","icon"]
+                      }'>
+                <thead>
+                  <tr>
+                    <th>{{ trans('general.name') }}</th>
+                    <th>{{ trans('admin/custom_fields/general.qty_fields') }}</th>
+                    <th>{{ trans('admin/custom_fields/general.used_by_models') }}</th>
+                    <th>{{ trans('table.actions') }}</th>
+                  </tr>
+                </thead>
+
+                @if(isset($custom_fieldsets))
+                <tbody>
+                  @foreach($custom_fieldsets AS $fieldset)
+                  <tr>
+                    <td>
+                      {{ link_to_route("fieldsets.show",$fieldset->name,['fieldset' => $fieldset->id]) }}
+                    </td>
+                    <td>
+                      {{ $fieldset->fields->count() }}
+                    </td>
+                    <td>
+                      @foreach($fieldset->models as $model)
+                        <a href="{{ route('models.show', $model->id) }}" class="label label-default">{{ $model->name }}{{ ($model->model_number) ? ' ('.$model->model_number.')' : '' }}</a>
+
+                      @endforeach
+                    </td>
+                    <td>
+
+                      <nobr>
+
+                      @can('update', $fieldset)
+
+                        <a href="{{ route('fieldsets.show', ['fieldset' => $fieldset->id]) }}" data-tooltip="true" title="{{ trans('general.edit_fieldset') }}">
+                          <button type="submit" class="btn btn-info btn-sm">
+                            <i class="fa-regular fa-rectangle-list"></i>
+                          </button>
+                        </a>
+
+                        <a href="{{ route('fieldsets.edit', $fieldset->id) }}" class="btn btn-warning btn-sm" data-tooltip="true" title="{{ trans('general.update') }}">
+                          <i class="fas fa-pencil-alt" aria-hidden="true"></i>
+                          <span class="sr-only">{{ trans('button.edit') }}</span>
+                        </a>
+                      @endcan
+
+                      @can('delete', $fieldset)
+                      {{ Form::open(['route' => array('fieldsets.destroy', $fieldset->id), 'method' => 'delete','style' => 'display:inline-block']) }}
+                        @if($fieldset->models->count() > 0)
+                        <button type="submit" class="btn btn-danger btn-sm disabled" data-tooltip="true" title="{{ trans('general.cannot_be_deleted') }}" disabled><i class="fas fa-trash"></i></button>
+                        @else
+                        <button type="submit" class="btn btn-danger btn-sm" data-tooltip="true" title="{{ trans('general.delete') }}"><i class="fas fa-trash"></i></button>
+                        @endif
+                      {{ Form::close() }}
+                      @endcan
+                        </nobr>
+                    </td>
+                  </tr>
+                  @endforeach
+                </tbody>
+                @endif
+              </table>
+            </div><!-- /.box-body -->
+          </div><!-- /.box.box-default -->
+
+        </div> <!-- .col-md-12-->
+
+
+      </div> <!-- .row-->
+   </div>
+         
+    <div class="tab-pane" id="consumables_category_custom_fields_tab">
+    <div class="row">
+        <div class="col-md-12">
+          <div class="box box-default">
+
+            <div class="box-header with-border">
+              <h2 class="box-title">{{ trans('admin/custom_fields/general.consumablefieldsets') }}</h2>
+            </div>
+          </div>
         </div>
-      </div><!-- /.box-header -->
-
-      <div class="box-body">
-        <table
-                data-cookie-id-table="customFieldsetsTable"
-                data-id-table="customFieldsetsTable"
-                data-search="true"
-                data-side-pagination="client"
-                data-show-columns="true"
-                data-show-export="true"
-                data-show-refresh="true"
-                data-sort-order="asc"
-                data-sort-name="name"
-                id="customFieldsTable"
-                class="table table-striped snipe-table"
-                data-export-options='{
-                "fileName": "export-fieldsets-{{ date('Y-m-d') }}",
-                "ignoreColumn": ["actions","image","change","checkbox","checkincheckout","icon"]
-                }'>
-          <thead>
-            <tr>
-              <th>{{ trans('general.name') }}</th>
-              <th>{{ trans('admin/custom_fields/general.qty_fields') }}</th>
-              <th>{{ trans('admin/custom_fields/general.used_by_models') }}</th>
-              <th>{{ trans('table.actions') }}</th>
-            </tr>
-          </thead>
-
-          @if(isset($custom_fieldsets))
-          <tbody>
-            @foreach($custom_fieldsets AS $fieldset)
-            <tr>
-              <td>
-                {{ link_to_route("fieldsets.show",$fieldset->name,['fieldset' => $fieldset->id]) }}
-              </td>
-              <td>
-                {{ $fieldset->fields->count() }}
-              </td>
-              <td>
-                @foreach($fieldset->models as $model)
-                  <a href="{{ route('models.show', $model->id) }}" class="label label-default">{{ $model->name }}{{ ($model->model_number) ? ' ('.$model->model_number.')' : '' }}</a>
-
-                @endforeach
-              </td>
-              <td>
-
-                <nobr>
-
-                @can('update', $fieldset)
-
-                  <a href="{{ route('fieldsets.show', ['fieldset' => $fieldset->id]) }}" data-tooltip="true" title="{{ trans('general.edit_fieldset') }}">
-                    <button type="submit" class="btn btn-info btn-sm">
-                      <i class="fa-regular fa-rectangle-list"></i>
-                    </button>
-                  </a>
-
-                  <a href="{{ route('fieldsets.edit', $fieldset->id) }}" class="btn btn-warning btn-sm" data-tooltip="true" title="{{ trans('general.update') }}">
-                    <i class="fas fa-pencil-alt" aria-hidden="true"></i>
-                    <span class="sr-only">{{ trans('button.edit') }}</span>
-                  </a>
-                @endcan
-
-                @can('delete', $fieldset)
-                {{ Form::open(['route' => array('fieldsets.destroy', $fieldset->id), 'method' => 'delete','style' => 'display:inline-block']) }}
-                  @if($fieldset->models->count() > 0)
-                  <button type="submit" class="btn btn-danger btn-sm disabled" data-tooltip="true" title="{{ trans('general.cannot_be_deleted') }}" disabled><i class="fas fa-trash"></i></button>
-                  @else
-                  <button type="submit" class="btn btn-danger btn-sm" data-tooltip="true" title="{{ trans('general.delete') }}"><i class="fas fa-trash"></i></button>
-                  @endif
-                {{ Form::close() }}
-                @endcan
-                  </nobr>
-              </td>
-            </tr>
-            @endforeach
-          </tbody>
-          @endif
-        </table>
-      </div><!-- /.box-body -->
-    </div><!-- /.box.box-default -->
-
-  </div> <!-- .col-md-12-->
-
-
-</div> <!-- .row-->
+    </div>
+              </div>
+              </div>
 @endcan
 @can('view', \App\Models\CustomField::class)
 <div class="row">
