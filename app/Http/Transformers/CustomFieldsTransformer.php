@@ -52,6 +52,7 @@ class CustomFieldsTransformer
             'show_in_listview'  => ($field->show_in_listview == '1') ? true : false,
             'created_at' => Helper::getFormattedDateObject($field->created_at, 'datetime'),
             'updated_at' => Helper::getFormattedDateObject($field->updated_at, 'datetime'),
+            'field_category' => e($field->field_category)  
         ];
 
         return $array;

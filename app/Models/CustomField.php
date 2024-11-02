@@ -40,6 +40,16 @@ class CustomField extends Model
     public $guarded = [
         'id',
     ];
+ 
+    /**
+     * Custom field category selector
+     *
+     * @var array
+     */
+    public const CATEGORY_SELECTOR = [
+        'ASSET'             => 0,
+        'CONSUMABLE'        => 1,        
+    ];
 
     /**
      * Validation rules.
@@ -73,6 +83,7 @@ class CustomField extends Model
         'field_values',
         'field_encrypted',
         'help_text',
+        'field_category',
         'show_in_email',
         'is_unique',
         'display_in_user_view',

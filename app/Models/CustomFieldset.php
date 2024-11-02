@@ -46,7 +46,7 @@ class CustomFieldset extends Model
     }
 
     /**
-     * Establishes the fieldset -> models relationship
+     * Establishes the fieldset -> models relationship 
      *
      * @author [Brady Wetherington] [<uberbrady@gmail.com>]
      * @since [v3.0]

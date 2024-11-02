@@ -669,6 +669,21 @@ class Helper
     }
 
     /**
+     * Get the list of field category make a dropdown menu
+     *
+     * @author [A. Rahardianto] [<veenone@gmail.com>]
+     * @since [v7.0.13]
+     * @return array
+     */
+    public static function predefined_field_category()
+    {
+        $categories = CustomField::CATEGORY_SELECTOR;
+        $flippedCategories = array_flip($categories);
+
+        return $flippedCategories;
+    }
+
+    /**
      * Get the list of barcode dimensions
      *
      * @author [A. Gianotto] [<snipe@snipe.net>]

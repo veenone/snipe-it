@@ -66,6 +66,7 @@ class CustomFieldsController extends Controller
 
         return view('custom_fields.fields.edit', [
             'predefinedFormats' => Helper::predefined_formats(),
+            'predefinedFieldCategory' => Helper::predefined_field_category(),
             'customFormat' => '',
             'fieldsets' => $fieldsets,
             'field' => new CustomField(),
@@ -91,10 +92,11 @@ class CustomFieldsController extends Controller
             $show_in_email = '0';
             $display_in_user_view = '0';
         }
-
+        
         $field = new CustomField([
             "name" => trim($request->get("name")),
             "element" => $request->get("element"),
+            "field_category" => $request->get("field_category"),
             "help_text" => $request->get("help_text"),
             "field_values" => $request->get("field_values"),
             "field_encrypted" => $request->get("field_encrypted", 0),
@@ -115,7 +117,7 @@ class CustomFieldsController extends Controller
         }
 
         if ($field->save()) {
-
+            
             // Sync fields with fieldsets
             $fieldset_array = $request->input('associate_fieldsets');
             if ($request->has('associate_fieldsets') && (is_array($fieldset_array))) {
@@ -207,6 +209,7 @@ class CustomFieldsController extends Controller
         return view('custom_fields.fields.edit', [
             'field'             => $field,
             'customFormat'      => $customFormat,
+            'field_category'    => $field_category,
             'fieldsets'         => $fieldsets,
             'predefinedFormats' => Helper::predefined_formats(),
         ]);
@@ -244,12 +247,13 @@ class CustomFieldsController extends Controller
             $show_in_email = '0';
             $display_in_user_view = '0';
         }
-        
+        dd($field);
         $field->name          = trim(e($request->get("name")));
         $field->element       = e($request->get("element"));
         $field->field_values  = $request->get("field_values");
         $field->created_by       = auth()->id();
         $field->help_text     = $request->get("help_text");
+        $field->field_category = $request->get("field_category", 0);
         $field->show_in_email = $show_in_email;
         $field->is_unique     = $request->get("is_unique", 0);
         $field->display_in_user_view = $display_in_user_view;
