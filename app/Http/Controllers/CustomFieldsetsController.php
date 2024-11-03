@@ -35,11 +35,12 @@ class CustomFieldsetsController extends Controller
      * @param int $id
      * @since [v1.8]
      */
-    public function show($id) : View | RedirectResponse
+    public function show($id, Request $request) : View | RedirectResponse
     {
         $cfset = CustomFieldset::with('fields')
-            ->where('id', '=', $id)->orderBy('id', 'ASC')->first();
-
+            ->where('id', '=', $id)            
+            ->orderBy('id', 'ASC')->first();
+   
         $this->authorize('view', $cfset);
 
         if ($cfset) {
@@ -54,8 +55,9 @@ class CustomFieldsetsController extends Controller
                     unset($custom_fields_list[$field->id]);
                 }
             }
-
-            return view('custom_fields.fieldsets.view')->with('custom_fieldset', $cfset)->with('maxid', $maxid + 1)->with('custom_fields_list', $custom_fields_list);
+            
+            $fieldCategory = $request->query('field_category');    
+            return view('custom_fields.fieldsets.view')->with('custom_fieldset', $cfset)->with('maxid', $maxid + 1)->with('custom_fields_list', $custom_fields_list)->with('field_category', $fieldCategory);;
         }
 
         return redirect()->route('fields.index')
@@ -68,11 +70,29 @@ class CustomFieldsetsController extends Controller
      * @author [Brady Wetherington] [<uberbrady@gmail.com>]
      * @since [v1.8]
      */
-    public function create() : View
+    public function create(Request $request) : View
+    {
+        
+        $this->authorize('create', CustomField::class);
+        $fieldCategory = $request->query('field_category', 0);
+
+        return view('custom_fields.fieldsets.edit')
+            ->with('item', new CustomFieldset())
+            ->with('field_category', $fieldCategory);
+    }
+
+    
+    /**
+     * Returns a view with a form for creating a new custom fieldset for consumables category.
+     *
+     * @author [A.Rahardianto] [<veenone@gmail.com>]
+     * @since [v7.3]
+     */
+    public function create_consumable_edit() : View
     {
         $this->authorize('create', CustomField::class);
 
-        return view('custom_fields.fieldsets.edit')->with('item', new CustomFieldset());
+        return view('custom_fields.fieldsets.consumable_edit')->with('item', new CustomFieldset());
     }
 
     /**
@@ -90,6 +110,7 @@ class CustomFieldsetsController extends Controller
 
         $fieldset = new CustomFieldset([
                 'name' => $request->get('name'),
+                'field_category' => $request->get('field_category'),
                 'created_by' => auth()->id(),
         ]);
 
@@ -108,7 +129,7 @@ class CustomFieldsetsController extends Controller
                 $fieldset->fields()->sync($field_ids);
             }
 
-            return redirect()->route('fieldsets.show', [$fieldset->id])
+            return redirect()->route('fieldsets.show', [$fieldset->id, 'field_category' => $fieldset->field_category])
                 ->with('success', trans('admin/custom_fields/message.fieldset.create.success'));
         }
 

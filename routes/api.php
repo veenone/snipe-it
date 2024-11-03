@@ -372,7 +372,7 @@ Route::group(['prefix' => 'v1', 'middleware' => ['api', 'throttle:api']], functi
                     'store' => 'api.customfields.store',
                     'destroy' => 'api.customfields.destroy',
                 ],
-            'except' => ['create', 'edit'],
+            'except' => ['create', 'edit', 'consumable_edit'],
             'parameters' => ['field' => 'field_id'],
             ]
         ); // end custom fields API routes
@@ -407,7 +407,7 @@ Route::group(['prefix' => 'v1', 'middleware' => ['api', 'throttle:api']], functi
                     'store' => 'api.fieldsets.store',
                     'destroy' => 'api.fieldsets.destroy',
                 ],
-            'except' => ['create', 'edit'],
+            'except' => ['create', 'edit','consumable_edit'],
             'parameters' => ['fieldset' => 'fieldset_id'],
             ]
         ); // end custom fieldsets API routes
