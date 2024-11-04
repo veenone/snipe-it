@@ -22,10 +22,16 @@ use \Illuminate\Contracts\View\View;
 class CustomFieldsetsController extends Controller
 {
 
-    public function index() : RedirectResponse
+    public function index(Request $request) 
     {
-        return redirect()->route("fields.index")
-        ->with("error", trans('admin/custom_fields/message.fieldset.does_not_exist'));
+        $fieldCategory = $request->input('field_category', 0);
+        $custom_fieldsets = CustomFieldset::where('field_category', $fieldCategory)->get();
+        if ($custom_fieldsets->isEmpty()) {
+            return redirect()->route("fields.index")
+                ->with("error", trans('admin/custom_fields/message.fieldset.does_not_exist'));
+        }
+
+        return view('fields.index', compact('custom_fieldsets', 'fieldCategory'));
     }
 
     /**
@@ -36,15 +42,20 @@ class CustomFieldsetsController extends Controller
      * @since [v1.8]
      */
     public function show($id, Request $request) : View | RedirectResponse
-    {
+    {   
+        
         $cfset = CustomFieldset::with('fields')
-            ->where('id', '=', $id)            
+            ->where('id', '=', $id)               
             ->orderBy('id', 'ASC')->first();
-   
+        
         $this->authorize('view', $cfset);
-
+       
         if ($cfset) {
-            $custom_fields_list = ['' => 'Add New Field to Fieldset'] + CustomField::pluck('name', 'id')->toArray();
+            $custom_fields_list = CustomField::where('field_category', $request->query('field_category'))
+            ->pluck('name', 'id')
+            ->toArray();
+
+            $custom_fields_list = ['' => 'Add New Field to Fieldset'] +  $custom_fields_list;
 
             $maxid = 0;
             foreach ($cfset->fields as $field) {
@@ -57,7 +68,7 @@ class CustomFieldsetsController extends Controller
             }
             
             $fieldCategory = $request->query('field_category');    
-            return view('custom_fields.fieldsets.view')->with('custom_fieldset', $cfset)->with('maxid', $maxid + 1)->with('custom_fields_list', $custom_fields_list)->with('field_category', $fieldCategory);;
+            return view('custom_fields.fieldsets.view')->with('custom_fieldset', $cfset)->with('maxid', $maxid + 1)->with('custom_fields_list', $custom_fields_list);
         }
 
         return redirect()->route('fields.index')
@@ -75,10 +86,17 @@ class CustomFieldsetsController extends Controller
         
         $this->authorize('create', CustomField::class);
         $fieldCategory = $request->query('field_category', 0);
-
-        return view('custom_fields.fieldsets.edit')
+     
+        if ($fieldCategory == 0) {
+            return view('custom_fields.fieldsets.edit')
             ->with('item', new CustomFieldset())
             ->with('field_category', $fieldCategory);
+        } else if ($fieldCategory == 1) {
+            return view('custom_fields.fieldsets.consumable_edit')
+            ->with('item', new CustomFieldset())
+            ->with('field_category', $fieldCategory);
+        } 
+        
     }
 
     
@@ -219,20 +237,24 @@ class CustomFieldsetsController extends Controller
         $set = CustomFieldset::find($id);
 
         $this->authorize('update', $set);
-
+         // Capture field_category from the request
+        $fieldCategory = $request->input('field_category', 0);
+        
         if ($request->filled('field_id')) {
+            
             foreach ($set->fields as $field) {
                 if ($field->id == $request->input('field_id')) {
-                    return redirect()->route('fieldsets.show', [$id])->withInput()->withErrors(['field_id' => trans('admin/custom_fields/message.field.already_added')]);
+                    return redirect()->route('fieldsets.show', [$id, 'field_category' => $fieldCategory])->withInput()->withErrors(['field_id' => trans('admin/custom_fields/message.field.already_added')]);
                 }
             }
+            
+            $results = $set->fields()->attach($request->input('field_id'), ['required' => ($request->input('required') == 'on'), 'order' => (int)$request->input('order', 1),
+            'field_category' => $fieldCategory,]);
 
-            $results = $set->fields()->attach($request->input('field_id'), ['required' => ($request->input('required') == 'on'), 'order' => (int)$request->input('order', 1)]);
-
-            return redirect()->route('fieldsets.show', [$id])->with('success', trans('admin/custom_fields/message.field.create.assoc_success'));
+            return redirect()->route('fieldsets.show', [$id, 'field_category' => $fieldCategory])->with('success', trans('admin/custom_fields/message.field.create.assoc_success'));
         }
 
-        return redirect()->route('fieldsets.show', [$id])->with('error', trans('admin/custom_fields/message.field.none_selected'));
+        return redirect()->route('fieldsets.show', [$id, 'field_category' => $fieldCategory])->with('error', trans('admin/custom_fields/message.field.none_selected'));
     }
 
     /**

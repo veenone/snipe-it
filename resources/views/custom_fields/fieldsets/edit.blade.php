@@ -3,7 +3,7 @@
     'updateText' => trans('admin/custom_fields/general.update_fieldset'),
     'helpText' => trans('admin/custom_fields/general.about_fieldsets_text'),
     'helpPosition' => 'right',
-    'formAction' => (isset($item->id)) ? route('fieldsets.update', ['fieldset' => $item->id]) : route('fieldsets.store',['field_category' => $field_category]),
+    'formAction' => (isset($item->id)) ? route('fieldsets.update', ['fieldset' => $item->id, 'field_category' => 0]) : route('fieldsets.store',['field_category' => 0]),
 ])
 
 @section('content')

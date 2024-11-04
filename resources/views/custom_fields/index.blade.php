@@ -62,6 +62,7 @@
                 @if(isset($custom_fieldsets))
                 <tbody>
                   @foreach($custom_fieldsets AS $fieldset)
+                  @if($fieldset->field_category == 0) <!-- Filter by field_category -->
                   <tr>
                     <td>
                       {{ link_to_route("fieldsets.show",$fieldset->name,['fieldset' => $fieldset->id, 'field_category' => 0]) }}
@@ -105,6 +106,7 @@
                         </nobr>
                     </td>
                   </tr>
+                  @endif
                   @endforeach
                 </tbody>
                 @endif
@@ -161,6 +163,7 @@
                 @if(isset($custom_fieldsets))
                 <tbody>
                   @foreach($custom_fieldsets AS $fieldset)
+                  @if($fieldset->field_category == 1)
                   <tr>
                     <td>
                       {{ link_to_route("fieldsets.show",$fieldset->name,['fieldset' => $fieldset->id, 'field_category' => 1]) }}
@@ -204,6 +207,7 @@
                         </nobr>
                     </td>
                   </tr>
+                  @endif
                   @endforeach
                 </tbody>
                 @endif

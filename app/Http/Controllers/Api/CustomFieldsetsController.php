@@ -91,8 +91,9 @@ class CustomFieldsetsController extends Controller
 
         if ($fieldset->save()) {
             // Sync fieldset with auto_add_to_fieldsets
-            $fields = CustomField::select('id')->where('auto_add_to_fieldsets', '=', '1')->get();
-
+            $fields = CustomField::select('id')
+            ->where('auto_add_to_fieldsets', '=', '1')
+            ->get();
             if ($fields->count() > 0) {
 
                 foreach ($fields as $field) {

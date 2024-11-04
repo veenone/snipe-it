@@ -92,7 +92,7 @@
                 ["fieldsets.associate",$custom_fieldset->id],
                 'class'=>'form-inline',
                 'id' => 'ordering']) }}
-
+                {{ Form::hidden('field_category', $custom_fieldset->field_category) }}
 
                 <div class="form-group">
                   <label for="field_id" class="sr-only">

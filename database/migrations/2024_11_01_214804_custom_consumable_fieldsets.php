@@ -24,6 +24,10 @@ return new class extends Migration
         Schema::table('custom_fields', function (Blueprint $table) { 
             $table->integer('field_category')->default(0); 
         });
+
+        Schema::table('custom_fields_custom_fieldset', function (Blueprint $table) { 
+            $table->integer('field_category')->default(0); 
+        });
     }
 
     /**
@@ -33,6 +37,9 @@ return new class extends Migration
     {
         Schema::dropIfExists('custom_consumable_fieldsets');
         Schema::table('custom_fields', function (Blueprint $table) { 
+            $table->dropColumn('field_category');
+        });
+        Schema::table('custom_fields_custom_fieldset', function (Blueprint $table) { 
             $table->dropColumn('field_category');
         });
     }
