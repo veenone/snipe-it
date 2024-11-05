@@ -115,9 +115,9 @@
               {{ Form::select("field_category",
                  Helper::predefined_field_category(), 
                   $field->field_category , 
-                  array('class'=>'format select2 form-control', 
-                      'aria-label'=>'field_category', 
-                      'style' => 'width:100%;')) }}
+                  ['id' => 'fieldCategorySelect', 'class'=>'format select2 form-control', 
+                'aria-label'=>'field_category', 
+                'style' => 'width:100%;']) }}
               {!! $errors->first('field_category', '<span class="alert-msg" aria-hidden="true"><i class="fas fa-times" aria-hidden="true"></i> :message</span>') !!}
             </div>
           </div>
@@ -237,6 +237,7 @@
               </label>
 
                 @foreach ($fieldsets as $fieldset)
+                
                     @php
                         $array_fieldname = 'associate_fieldsets.'.$fieldset->id;
 
@@ -250,7 +251,7 @@
                             $checked = '';
                         }
                     @endphp
-
+                    <div class="fieldset-container" data-category="{{ $fieldset->field_category }}">
                           <label class="form-control{{ $errors->has('associate_fieldsets.'.$fieldset->id) ? ' has-error' : '' }}">
                               <input type="checkbox"
                                      name="associate_fieldsets[{{ $fieldset->id }}]"
@@ -261,7 +262,7 @@
                               {!! $errors->first('associate_fieldsets.'.$fieldset->id, '<span class="alert-msg" aria-hidden="true"><i class="fas fa-times" aria-hidden="true"></i> :message</span>') !!}
 
                           </label>
-
+                </div>
                 @endforeach
 
           </div>
@@ -346,6 +347,23 @@
         }
     });
 
+    // Handle field category change and filter fieldsets
+    $(document).ready(function() {
+    $("#fieldCategorySelect").select2(); // Ensure that select2 is initialized
+    
+    $("#fieldCategorySelect").on("change", function() {
+        const selectedCategory = $(this).val();       
+
+        $(".fieldset-container").each(function() {
+            const fieldsetCategory = $(this).data('category');
+            if (fieldsetCategory == selectedCategory || selectedCategory === '') {
+                $(this).show();
+            } else {
+                $(this).hide();
+            }
+        });
+    });
+});
 
 
 </script>

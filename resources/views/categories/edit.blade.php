@@ -15,12 +15,23 @@
 <div class="form-group {{ $errors->has('category_type') ? ' has-error' : '' }}">
     <label for="category_type" class="col-md-3 control-label">{{ trans('general.type') }}</label>
     <div class="col-md-7 required">
-        {{ Form::select('category_type', $category_types , old('category_type', $item->category_type), array('class'=>'select2', 'style'=>'min-width:350px', 'aria-label'=>'category_type', ($item->category_type!='') || ($item->itemCount() > 0) ? 'disabled' : '')) }}
+        {{ Form::select('category_type', $category_types, old('category_type', $item->category_type), [
+            'id' => 'categoryTypeSelect',
+            'class'=>'select2',
+            'style'=>'min-width:350px',
+            'aria-label'=>'category_type',
+            ($item->category_type!='') || ($item->itemCount() > 0) ? 'disabled' : ''
+        ]) }}
         {!! $errors->first('category_type', '<span class="alert-msg" aria-hidden="true"><i class="fas fa-times" aria-hidden="true"></i> :message</span>') !!}
     </div>
     <div class="col-md-7 col-md-offset-3">
         <p class="help-block">{!! trans('admin/categories/message.update.cannot_change_category_type') !!} </p>
     </div>
+</div>
+
+
+<div id="livewireComponentContainer" style="display: none;">
+    @livewire('custom-field-set-default-values-for-consumable-category',["model_id" => $item->id ?? $model_id ?? null,  'field_category' => 1  ])
 </div>
 
 <livewire:category-edit-form
@@ -61,5 +72,22 @@
 @endif
 
 
+
+
+
+@section('moar_scripts')
+<script nonce="{{ csrf_token() }}">
+    $(document).ready(function() {
+    $('#categoryTypeSelect').on('select2:select', function(e) {
+        const selectedType = e.params.data.id; // Get the selected value
+        alert(selectedType);
+        if (selectedType === 'consumable') {
+            $('#livewireComponentContainer').show(); // Show the Livewire component
+        } else {
+            $('#livewireComponentContainer').hide(); // Hide the Livewire component
+        }
+    });
+});
+</script>
 
 @stop

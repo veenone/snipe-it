@@ -646,8 +646,14 @@ class Helper
      * @since [v2.5]
      * @return array
      */
-    public static function customFieldsetList()
+    public static function customFieldsetList($field_category = null)
     {
+        $query = CustomFieldset::query();
+        if ($field_category) {
+            // Add a condition to filter by field_category if provided
+            $query->where('field_category', $field_category);
+        }
+        
         $customfields = ['' => trans('admin/models/general.no_custom_field')] + CustomFieldset::pluck('name', 'id')->toArray();
 
         return  $customfields;
