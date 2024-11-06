@@ -39,6 +39,7 @@ class CategoriesController extends Controller
             'components_count',
             'licenses_count',
             'image',
+            'field_category',
         ];
 
         $categories = Category::select([
@@ -52,6 +53,7 @@ class CategoriesController extends Controller
             'require_acceptance',
             'checkin_email',
             'image',
+            'field_category'
             ])
             ->with('adminuser')
             ->withCount('accessories as accessories_count', 'consumables as consumables_count', 'components as components_count', 'licenses as licenses_count');
@@ -139,12 +141,14 @@ class CategoriesController extends Controller
      * @return \Illuminate\Http\Response
      */
     public function store(ImageUploadRequest $request) : JsonResponse
-    {
+    {   
+        print_r($request);
         $this->authorize('create', Category::class);
         $category = new Category;
         $category->fill($request->all());
         $category->category_type = strtolower($request->input('category_type'));
         $category = $request->handleImages($category);
+        $category->field_category = $request->field_category;
 
         if ($category->save()) {
             return response()->json(Helper::formatStandardApiResponse('success', $category, trans('admin/categories/message.create.success')));
@@ -182,7 +186,7 @@ class CategoriesController extends Controller
     {
         $this->authorize('update', Category::class);
         $category = Category::findOrFail($id);
-
+        print_r($request);
         // Don't allow the user to change the category_type once it's been created
         if (($request->filled('category_type')) && ($category->category_type != $request->input('category_type'))) {
             return response()->json(

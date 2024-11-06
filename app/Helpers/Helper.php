@@ -20,6 +20,8 @@ use Illuminate\Support\Str;
 use Intervention\Image\ImageManagerStatic as Image;
 use Illuminate\Support\Facades\Session;
 
+use function Laravel\Prompts\alert;
+
 class Helper
 {
 
@@ -646,15 +648,10 @@ class Helper
      * @since [v2.5]
      * @return array
      */
-    public static function customFieldsetList($field_category = null)
+    public static function customFieldsetList($field_category=1)
     {
-        $query = CustomFieldset::query();
-        if ($field_category) {
-            // Add a condition to filter by field_category if provided
-            $query->where('field_category', $field_category);
-        }
-        
-        $customfields = ['' => trans('admin/models/general.no_custom_field')] + CustomFieldset::pluck('name', 'id')->toArray();
+      
+        $customfields = ['' => trans('admin/models/general.no_custom_field')] + CustomFieldset::where('field_category',1)->pluck('name', 'id')->toArray();
 
         return  $customfields;
     }
