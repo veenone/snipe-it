@@ -28,6 +28,7 @@ class CustomFieldSetDefaultValuesForConsumableCategory extends Component
 
         $this->initializeSelectedValuesArray();
         $this->populatedSelectedValuesArray();
+        
     
         
     }

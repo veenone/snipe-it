@@ -30,9 +30,10 @@
 </div>
 
 
-<div id="livewireComponentContainer" style="display: none;">
+<div id="livewireComponentContainer" style="display: {{ $item->category_type === 'consumable' ? 'block' : 'none' }};one;">
     @livewire('custom-field-set-default-values-for-consumable-category',["model_id" => $item->id ?? $model_id ?? null,  'field_category' => 1  ])
 </div>
+
 
 <livewire:category-edit-form
     :default-eula-text="$snipeSettings->default_eula_text"
@@ -43,7 +44,6 @@
 />
 
 @include ('partials.forms.edit.image-upload', ['image_path' => app('categories_upload_path')])
-
 
 @stop
 
@@ -88,6 +88,8 @@
         }
     });
 });
+
+
 </script>
 
 @stop

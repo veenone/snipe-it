@@ -68,6 +68,7 @@ class CategoriesTransformer
                 ] : null,
                 'created_at' => Helper::getFormattedDateObject($category->created_at, 'datetime'),
                 'updated_at' => Helper::getFormattedDateObject($category->updated_at, 'datetime'),
+                'fieldset_id' => ($category->fieldset_id)
             ];
 
             $permissions_array['available_actions'] = [

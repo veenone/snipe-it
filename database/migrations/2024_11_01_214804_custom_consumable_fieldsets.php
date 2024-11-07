@@ -30,7 +30,7 @@ return new class extends Migration
         });
         
         Schema::table('categories', function (Blueprint $table) { 
-            $table->integer('field_category')->nullable(); 
+            $table->integer('fieldset_id')->nullable(); 
         });
     
     }
@@ -48,7 +48,7 @@ return new class extends Migration
             $table->dropColumn('field_category');
         });
         Schema::table('categories', function (Blueprint $table) { 
-            $table->dropColumn('field_category');
+            $table->dropColumn('fieldset_id');
         });
     }
 };

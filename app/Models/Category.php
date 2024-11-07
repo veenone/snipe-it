@@ -71,6 +71,7 @@ class Category extends SnipeModel
         'require_acceptance',
         'use_default_eula',
         'created_by',
+        'fieldset_id'
     ];
 
     use Searchable;
