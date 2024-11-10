@@ -20,19 +20,25 @@ return new class extends Migration
             $table->integer('created_by')->nullable();
         });
         }
-
+     
+        if (Schema::hasTable('custom_fields')) {
+     
         Schema::table('custom_fields', function (Blueprint $table) { 
             $table->integer('field_category')->default(0); 
         });
+    }
 
-        Schema::table('custom_fields_custom_fieldset', function (Blueprint $table) { 
+    
+        Schema::table('custom_field_custom_fieldset', function (Blueprint $table) { 
             $table->integer('field_category')->default(0); 
         });
         
+    
         Schema::table('categories', function (Blueprint $table) { 
             $table->integer('fieldset_id')->nullable(); 
         });
     
+        
     }
 
     /**
@@ -44,9 +50,9 @@ return new class extends Migration
         Schema::table('custom_fields', function (Blueprint $table) { 
             $table->dropColumn('field_category');
         });
-        Schema::table('custom_fields_custom_fieldset', function (Blueprint $table) { 
-            $table->dropColumn('field_category');
-        });
+        // Schema::table('custom_fields_custom_fieldset', function (Blueprint $table) { 
+        //     $table->dropColumn('field_category');
+        // });
         Schema::table('categories', function (Blueprint $table) { 
             $table->dropColumn('fieldset_id');
         });
