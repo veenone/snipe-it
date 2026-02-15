@@ -36,7 +36,7 @@
         "bootstrap-less": "^3.3.8",
         "bootstrap-table": "1.20.2",
         "chart.js": "^2.9.4",
-        "css-loader": "^4.0.0",
+        "css-loader": "^6.0.0",
         "ekko-lightbox": "^5.1.1",
         "imagemin": "^8.0.1",
         "jquery-form-validator": "^2.3.79",
