@@ -315,7 +315,117 @@ class SnipeMutableCollection extends MutableCollection
             request()->attributes->set('scim_in_flight_resource', $object);
         }
 
+        // Snapshot ONLY the user ids referenced in the SCIM payload,
+        // not the whole membership, so a PATCH against a group with
+        // 50k members doesn't load 50k rows just to log a single-add.
+        // See PatchGroupMembersTest for the shape guard.
+        $requestedUserIds = $this->userIdsFromMemberPayload($value);
+        $previouslyAttachedIds = $this->pivotFilterToAttached($object, $requestedUserIds);
+
         parent::add($value, $object);
+
+        $this->logGroupMembershipChangesForIds(
+            $object,
+            attachedIds: array_values(array_diff($requestedUserIds, $previouslyAttachedIds)),
+            detachedIds: [],
+        );
+    }
+
+    public function remove($value, Model &$object, ?Path $path = null)
+    {
+        // Two shapes: filter-path form ("members[value eq 5]") targets
+        // one user id, list-value form targets an explicit list. Both
+        // reduce to a small requestedUserIds set that we pre-check
+        // against the pivot so we log only real detachments.
+        if ($path?->getValuePathFilter()?->getComparisonExpression() !== null) {
+            $requestedUserIds = [(int) $path->getValuePathFilter()->getComparisonExpression()->compareValue];
+        } else {
+            $requestedUserIds = $this->userIdsFromMemberPayload($value);
+        }
+        $previouslyAttachedIds = $this->pivotFilterToAttached($object, $requestedUserIds);
+
+        parent::remove($value, $object, $path);
+
+        $this->logGroupMembershipChangesForIds(
+            $object,
+            attachedIds: [],
+            detachedIds: $previouslyAttachedIds,
+        );
+    }
+
+    /**
+     * Flatten the SCIM `members` payload down to a plain list of
+     * integer user ids. Skips entries missing a `value` field so the
+     * validation error in add() stays the one thrown by the guard
+     * above, not a silent misclassification here.
+     *
+     * @return array<int, int>
+     */
+    private function userIdsFromMemberPayload($value): array
+    {
+        $ids = [];
+        foreach ((array) $value as $entry) {
+            if (is_array($entry) && isset($entry['value'])) {
+                $ids[] = (int) $entry['value'];
+            }
+        }
+
+        return array_values(array_unique($ids));
+    }
+
+    /**
+     * Return the subset of $requestedUserIds that are currently on
+     * the pivot for this group. Cheap: one indexed lookup on
+     * (group_id, user_id in (…)) instead of a full-membership scan.
+     *
+     * Returns [] when the parent relation is not user-shaped
+     * (defensive guard for future MutableCollection usage against
+     * non-Group parents).
+     *
+     * @param  array<int, int>  $requestedUserIds
+     * @return array<int, int>
+     */
+    private function pivotFilterToAttached(Model $object, array $requestedUserIds): array
+    {
+        if (! ($object instanceof Group || $object instanceof SCIMGroup) || $requestedUserIds === []) {
+            return [];
+        }
+
+        return $object->users()
+            ->whereIn('users.id', $requestedUserIds)
+            ->pluck('users.id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
+    }
+
+    /**
+     * Write per-user Actionlogs for the attach / detach delta the
+     * caller computed. Delegates to User::logGroupAttached() /
+     * logGroupDetached() so the log_meta shape matches
+     * User::syncGroupsWithLogging(), letting the history UI render
+     * SCIM-driven changes with the same formatter as Web / API edits.
+     *
+     * @param  array<int, int>  $attachedIds
+     * @param  array<int, int>  $detachedIds
+     */
+    private function logGroupMembershipChangesForIds(Model $object, array $attachedIds, array $detachedIds): void
+    {
+        if (! ($object instanceof Group || $object instanceof SCIMGroup)) {
+            return;
+        }
+
+        foreach ($attachedIds as $userId) {
+            $user = User::find($userId);
+            if ($user !== null) {
+                $user->logGroupAttached((int) $object->id);
+            }
+        }
+        foreach ($detachedIds as $userId) {
+            $user = User::find($userId);
+            if ($user !== null) {
+                $user->logGroupDetached((int) $object->id);
+            }
+        }
     }
 }
 
