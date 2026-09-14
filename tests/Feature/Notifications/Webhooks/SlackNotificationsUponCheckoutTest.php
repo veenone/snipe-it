@@ -26,7 +26,7 @@ use PHPUnit\Framework\Attributes\Group;
 use Tests\TestCase;
 use Illuminate\Notifications\Messages\SlackMessage;
 use NotificationChannels\GoogleChat\GoogleChatMessage;
-use NotificationChannels\MicrosoftTeams\MicrosoftTeamsMessage;
+
 
 #[Group('notifications')]
 class SlackNotificationsUponCheckoutTest extends TestCase
