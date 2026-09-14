@@ -6,13 +6,7 @@ use App\Rules\AssetTagPatternRule;
 use Illuminate\Support\Facades\Validator;
 use Tests\TestCase;
 
-/**
- * Rule catches literal-prefix asset-tag patterns like "DEMO-" or
- * "PROD-" that will render to the same tag for every synced record
- * and collide on uniqueness after the first save. Empty / null
- * patterns are allowed because the framework has a documented
- * fall-through (autoincrement, then source-slug + external-id).
- */
+
 class AssetTagPatternRuleTest extends TestCase
 {
     public function test_pattern_with_external_id_placeholder_passes()
