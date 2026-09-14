@@ -805,6 +805,31 @@ $(function () {
         });
     });
 
+    /*
+     * Pull Now / Push Now submit spinner + double-click guard.
+     *
+     * Any <form class="js-sync-action-form"> gets a submit handler
+     * that swaps the cloud icon on its <button.js-sync-action-button>
+     * for a spinner and disables every sync-action button on the
+     * page. Admins with slower fleets don't panic-click while the
+     * request is in flight, and they can't fire Push while Pull is
+     * running on the same instance.
+     */
+    document.querySelectorAll('form.js-sync-action-form').forEach(function (form) {
+        form.addEventListener('submit', function () {
+            var btn = form.querySelector('button.js-sync-action-button');
+            if (!btn || btn.disabled) return;
+            var icon = btn.querySelector('.js-sync-action-icon');
+            if (icon) {
+                icon.className = 'fa-solid fa-spinner fa-spin js-sync-action-icon';
+            }
+            btn.disabled = true;
+            document.querySelectorAll('button.js-sync-action-button').forEach(function (other) {
+                other.disabled = true;
+            });
+        });
+    });
+
     // Same story for viewport resizes: bootstrap-table caches column
     // widths from the initial layout and doesn't recompute when the
     // window width changes. Debounce so a drag-resize doesn't fire

@@ -75252,6 +75252,88 @@ $(function () {
     });
   });
 
+  /*
+   * Conditional field visibility for schema-driven forms.
+   *
+   * Any element carrying data-visible-when-field and data-visible-when-value
+   * (comma-separated for multi-value) is shown when the source field's
+   * current value matches, hidden otherwise. Powers the auth-method
+   * show/hide on the sync-adapter credentials pages so the Basic Auth
+   * inputs don't render when the admin picked Bearer, etc. Fully
+   * data-attribute driven, no per-partial JS required.
+   */
+  function applyAdapterConditionalVisibility() {
+    document.querySelectorAll('[data-visible-when-field]').forEach(function (target) {
+      var sourceName = target.getAttribute('data-visible-when-field');
+      var acceptedValues = String(target.getAttribute('data-visible-when-value') || '').split(',');
+      var source = document.querySelector('[name="' + sourceName + '"]');
+      if (!source) return;
+      target.style.display = acceptedValues.indexOf(source.value) !== -1 ? '' : 'none';
+    });
+  }
+
+  // Bind change listeners against the unique set of source-field names
+  // referenced by any conditional target on the page. jQuery here
+  // because select2 forwards change events through jQuery, so plain
+  // addEventListener would miss the auth-method dropdown's own picks.
+  var __adapterConditionalSources = {};
+  document.querySelectorAll('[data-visible-when-field]').forEach(function (target) {
+    __adapterConditionalSources[target.getAttribute('data-visible-when-field')] = true;
+  });
+  Object.keys(__adapterConditionalSources).forEach(function (name) {
+    $('[name="' + name + '"]').on('change', applyAdapterConditionalVisibility);
+  });
+  applyAdapterConditionalVisibility();
+  // Re-apply after a tab becomes visible. select2 sizing and hidden-
+  // tab state can leave the initial pass stale on tabs the admin
+  // hadn't clicked yet.
+  $('body').on('shown.bs.tab', 'a[data-toggle="tab"]', applyAdapterConditionalVisibility);
+
+  /*
+   * Live-update the "Base URL:" prefix addon on any pull_path /
+   * push_path input for custom sync adapters as the admin types into the
+   * Base URL input.
+   * Each addon carries data-adapter-slug so multiple adapter tabs
+   * update independently, and data-placeholder holds the "Base URL:"
+   * fallback text the server rendered when the URL was blank on
+   * first load (so localizers only touch a lang file, not this JS).
+   */
+  document.querySelectorAll('.js-adapter-url-prefix').forEach(function (addon) {
+    var slug = addon.getAttribute('data-adapter-slug');
+    if (!slug) return;
+    var input = document.querySelector('input[name="' + slug + '_url"]');
+    if (!input) return;
+    var placeholder = addon.getAttribute('data-placeholder') || '';
+    input.addEventListener('input', function () {
+      addon.textContent = input.value || placeholder;
+    });
+  });
+
+  /*
+   * Pull Now / Push Now submit spinner + double-click guard.
+   *
+   * Any <form class="js-sync-action-form"> gets a submit handler
+   * that swaps the cloud icon on its <button.js-sync-action-button>
+   * for a spinner and disables every sync-action button on the
+   * page. Admins with slower fleets don't panic-click while the
+   * request is in flight, and they can't fire Push while Pull is
+   * running on the same instance.
+   */
+  document.querySelectorAll('form.js-sync-action-form').forEach(function (form) {
+    form.addEventListener('submit', function () {
+      var btn = form.querySelector('button.js-sync-action-button');
+      if (!btn || btn.disabled) return;
+      var icon = btn.querySelector('.js-sync-action-icon');
+      if (icon) {
+        icon.className = 'fa-solid fa-spinner fa-spin js-sync-action-icon';
+      }
+      btn.disabled = true;
+      document.querySelectorAll('button.js-sync-action-button').forEach(function (other) {
+        other.disabled = true;
+      });
+    });
+  });
+
   // Same story for viewport resizes: bootstrap-table caches column
   // widths from the initial layout and doesn't recompute when the
   // window width changes. Debounce so a drag-resize doesn't fire
