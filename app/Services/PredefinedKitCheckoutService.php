@@ -251,9 +251,9 @@ class PredefinedKitCheckoutService
                     // request gets skipped with an operator-visible error
                     // so the audit log matches the persisted state.
                     $locked = LicenseSeat::whereKey($licenseSeat->id)->lockForUpdate()->first();
-                    if (!$locked || $locked->assigned_to !== null) {
+                    if (! $locked || $locked->assigned_to !== null) {
                         $errors[] = trans('admin/kits/general.none_licenses', [
-                            'license' => $licenseSeat->license?->name ?? '?',
+                            'license' => $licenseSeat->license->name ?? '?',
                             'qty' => 1,
                         ]);
 
@@ -279,7 +279,7 @@ class PredefinedKitCheckoutService
                     // capacity was already consumed by a racing request.
                     $requestedQuantity = $consumable->pivot->quantity;
                     $locked = Consumable::whereKey($consumable->id)->lockForUpdate()->first();
-                    if (!$locked || $locked->numRemaining() < $requestedQuantity) {
+                    if (! $locked || $locked->numRemaining() < $requestedQuantity) {
                         $errors[] = trans('admin/kits/general.none_consumables', [
                             'consumable' => $consumable->name,
                             'qty' => $requestedQuantity,
@@ -299,7 +299,7 @@ class PredefinedKitCheckoutService
                     // Same shape as the consumable branch above.
                     $requestedQuantity = $accessory->pivot->quantity;
                     $locked = Accessory::whereKey($accessory->id)->lockForUpdate()->first();
-                    if (!$locked || $locked->numRemaining() < $requestedQuantity) {
+                    if (! $locked || $locked->numRemaining() < $requestedQuantity) {
                         $errors[] = trans('admin/kits/general.none_accessory', [
                             'accessory' => $accessory->name,
                             'qty' => $requestedQuantity,
