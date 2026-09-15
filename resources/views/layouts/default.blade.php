@@ -270,6 +270,7 @@
                                     <a href="#" class="dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                         @if (auth()->user()->present()->gravatar())
                                             <img src="{{ Auth::user()->present()->gravatar() }}" class="user-image"
+                                                 referrerpolicy="no-referrer"
                                                  alt="">
                                         @else
                                             <x-icon type="user" />

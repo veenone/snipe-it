@@ -376,7 +376,8 @@ $(function () {
             }
             $obj.select2(options);
         });
-        
+
+
     // Crazy select2 rich dropdowns with images!
     $('.js-data-ajax').each( function (i,item) {
         var link = $(item);
@@ -1049,7 +1050,7 @@ $(document).ready(function () {
     });
 
     // Auto-init eonasdan datetimepickers. bootstrap-datepicker has a native
-    // data-provide auto-init; eonasdan does not, so we do it ourselves.
+    // data-provide auto-init. eonasdan does not, so we do it ourselves.
     // Options are read from data-attributes on the wrapper so blade components
     // can tune format/side-by-side without touching this JS.
     //

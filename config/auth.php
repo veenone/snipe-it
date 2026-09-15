@@ -128,6 +128,24 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Login Form Throttle
+    |--------------------------------------------------------------------------
+    | Attempt / lockout ceiling for the local login form. Consumed by
+    | LoginController via Illuminate\Foundation\Auth\ThrottlesLogins.
+    |
+    | Kept as a dedicated top-level key rather than nested under
+    | `passwords.users` because Laravel 12 types
+    | DatabaseTokenRepository::$throttle as `int`, so an array value on
+    | that key TypeErrors password-reset construction.
+    |
+    */
+    'login_throttle' => [
+        'max_attempts' => env('LOGIN_MAX_ATTEMPTS', 5),
+        'lockout_duration' => env('LOGIN_LOCKOUT_DURATION', 60),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Password Confirmation Timeout
     |--------------------------------------------------------------------------
     |

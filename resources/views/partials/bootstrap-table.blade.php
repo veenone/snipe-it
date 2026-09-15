@@ -3999,7 +3999,7 @@
     }
 
     function linkNumberToUserAssetsFormatter(value, row) {
-        return linkToUserSectionBasedOnCount(value, row.id, 'asset');
+        return linkToUserSectionBasedOnCount(value, row.id, 'assets');
     }
 
     function linkNumberToUserLicensesFormatter(value, row) {

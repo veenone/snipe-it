@@ -359,13 +359,13 @@ class LocationsController extends Controller
      */
     public function getClone($locationId = null): View|RedirectResponse
     {
-        $this->authorize('create', Location::class);
-
         // Check if the asset exists
         if (is_null($location_to_clone = Location::find($locationId))) {
             // Redirect to the asset management page
             return redirect()->route('licenses.index')->with('error', trans('admin/locations/message.does_not_exist'));
         }
+
+        $this->authorize('clone', $location_to_clone);
 
         $location = clone $location_to_clone;
 

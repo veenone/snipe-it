@@ -107,7 +107,7 @@ class AssetModelsTransformer
             'view' => Gate::allows('view', $assetmodel),
             'update' => (Gate::allows('update', $assetmodel) && ($assetmodel->deleted_at == '')),
             'delete' => $assetmodel->isDeletable(),
-            'clone' => (Gate::allows('create', AssetModel::class) && ($assetmodel->deleted_at == '')),
+            'clone' => (Gate::allows('clone', $assetmodel) && ($assetmodel->deleted_at == '')),
             'restore' => (Gate::allows('create', AssetModel::class) && ($assetmodel->deleted_at != '')),
             // Request / cancel: if the requestable flag is off the row
             // never surfaces on /account/requestable anyway (scoped
