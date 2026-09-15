@@ -622,7 +622,7 @@ class CustomHttpAdapter extends ConfigurableAdapter implements PushableAdapter
                 return;
             }
 
-            foreach ($records as $index => $record) {
+            foreach ($records as $record) {
                 if (! is_array($record)) {
                     $globalIndex++;
 
