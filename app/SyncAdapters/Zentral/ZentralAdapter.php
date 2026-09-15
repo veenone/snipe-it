@@ -19,12 +19,12 @@ class ZentralAdapter extends ConfigurableAdapter
         return 'Zentral';
     }
 
-    public function credentialSchema(): array
+    public function settingsSchema(): array
     {
         return [
             [
                 'key' => 'token',
-                'label' => 'API Token',
+                'label' => trans('admin/settings/sync_adapters.label_api_token'),
                 'secret' => true,
                 'help' => trans('admin/settings/sync_adapters.zentral_token_help'),
             ],

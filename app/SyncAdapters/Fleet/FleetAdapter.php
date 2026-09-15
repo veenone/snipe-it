@@ -26,12 +26,12 @@ class FleetAdapter extends ConfigurableAdapter
         return 'Fleet';
     }
 
-    public function credentialSchema(): array
+    public function settingsSchema(): array
     {
         return [
             [
                 'key' => 'token',
-                'label' => 'API Token',
+                'label' => trans('admin/settings/sync_adapters.label_api_token'),
                 'secret' => true,
                 'help' => trans('admin/settings/sync_adapters.fleet_token_help'),
             ],
@@ -109,7 +109,7 @@ class FleetAdapter extends ConfigurableAdapter
 
     public function vendorGroupLabel(): string
     {
-        return 'Fleet Team';
+        return trans('admin/settings/sync_adapters.vendor_group_fleet_team');
     }
 
     public function fetchGroups(): array

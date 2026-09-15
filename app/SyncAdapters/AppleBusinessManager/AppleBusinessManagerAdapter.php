@@ -87,32 +87,32 @@ class AppleBusinessManagerAdapter extends ConfigurableAdapter
         return false;
     }
 
-    public function credentialSchema(): array
+    public function settingsSchema(): array
     {
         $schema = [
             [
                 'key' => 'mode',
-                'label' => 'Portal',
+                'label' => trans('admin/settings/sync_adapters.abm_label_portal'),
                 'type' => 'select',
                 'options' => [
-                    'business' => 'Apple Business Manager',
-                    'school' => 'Apple School Manager',
+                    'business' => trans('admin/settings/sync_adapters.abm_option_mode_business'),
+                    'school' => trans('admin/settings/sync_adapters.abm_option_mode_school'),
                 ],
                 'help' => trans('admin/settings/sync_adapters.abm_mode_help'),
             ],
             [
                 'key' => 'client_id',
-                'label' => 'Client ID',
+                'label' => trans('admin/settings/sync_adapters.label_client_id'),
                 'help' => trans('admin/settings/sync_adapters.abm_client_id_help'),
             ],
             [
                 'key' => 'key_id',
-                'label' => 'Key ID',
+                'label' => trans('admin/settings/sync_adapters.abm_label_key_id'),
                 'help' => trans('admin/settings/sync_adapters.abm_key_id_help'),
             ],
             [
                 'key' => 'private_key',
-                'label' => 'Private Key (PEM)',
+                'label' => trans('admin/settings/sync_adapters.abm_label_private_key'),
                 'type' => 'textarea',
                 'secret' => true,
                 'help' => trans('admin/settings/sync_adapters.abm_private_key_help'),
@@ -120,7 +120,7 @@ class AppleBusinessManagerAdapter extends ConfigurableAdapter
             ],
             [
                 'key' => 'product_family_filter',
-                'label' => 'Product Families',
+                'label' => trans('admin/settings/sync_adapters.abm_label_product_families'),
                 'type' => 'multiselect',
                 'options' => self::PRODUCT_FAMILIES,
                 'default' => array_keys(self::PRODUCT_FAMILIES),
@@ -129,7 +129,7 @@ class AppleBusinessManagerAdapter extends ConfigurableAdapter
             ],
             [
                 'key' => 'pull_model_images',
-                'label' => 'Pull model images from appledb.dev',
+                'label' => trans('admin/settings/sync_adapters.abm_label_pull_model_images'),
                 'type' => 'checkbox',
                 'required' => false,
                 'help' => trans('admin/settings/sync_adapters.abm_pull_model_images_help'),
@@ -150,6 +150,7 @@ class AppleBusinessManagerAdapter extends ConfigurableAdapter
                 'label' => trans('admin/settings/sync_adapters.abm_category_family_label', ['family' => $displayName]),
                 'type' => 'category',
                 'required' => false,
+                'section' => 'categories',
                 'help' => trans('admin/settings/sync_adapters.abm_category_family_help', ['family' => $displayName]),
             ];
         }
@@ -157,19 +158,34 @@ class AppleBusinessManagerAdapter extends ConfigurableAdapter
         return $schema;
     }
 
+    /**
+     * Section titles for the credential schema. The category
+     * selectors are the only grouped block here. Everything else
+     * (auth + toggles) stays flat above them because there are only
+     * a handful of top-level fields.
+     */
+    public function settingsSections(): array
+    {
+        return [
+            'categories' => [
+                'title' => trans('admin/settings/sync_adapters.abm_section_categories_title'),
+            ],
+        ];
+    }
+
     public function extraFields(): array
     {
         return [
-            'abm_product_family' => ['label_key' => 'admin/settings/sync_adapters.extra_product_family'],
-            'abm_model_marketing_name' => ['label_key' => 'admin/settings/sync_adapters.extra_model_marketing_name'],
-            'abm_product_type' => ['label_key' => 'admin/settings/sync_adapters.extra_product_type'],
-            'abm_part_number' => ['label_key' => 'admin/settings/sync_adapters.extra_part_number'],
-            'abm_color' => ['label_key' => 'admin/settings/sync_adapters.extra_color'],
-            'abm_order_number' => ['label_key' => 'admin/settings/sync_adapters.extra_order_number'],
-            'abm_order_date' => ['label_key' => 'admin/settings/sync_adapters.extra_order_date'],
-            'abm_purchase_source_type' => ['label_key' => 'admin/settings/sync_adapters.extra_purchase_source_type'],
-            'abm_purchase_source_id' => ['label_key' => 'admin/settings/sync_adapters.extra_purchase_source_id'],
-            'abm_mdm_server' => ['label_key' => 'admin/settings/sync_adapters.extra_mdm_server'],
+            'abm_product_family' => ['label_key' => 'admin/settings/sync_adapters.abm_extra_product_family'],
+            'abm_model_marketing_name' => ['label_key' => 'admin/settings/sync_adapters.abm_extra_model_marketing_name'],
+            'abm_product_type' => ['label_key' => 'admin/settings/sync_adapters.abm_extra_product_type'],
+            'abm_part_number' => ['label_key' => 'admin/settings/sync_adapters.abm_extra_part_number'],
+            'abm_color' => ['label_key' => 'admin/settings/sync_adapters.abm_extra_color'],
+            'abm_order_number' => ['label_key' => 'admin/settings/sync_adapters.abm_extra_order_number'],
+            'abm_order_date' => ['label_key' => 'admin/settings/sync_adapters.abm_extra_order_date'],
+            'abm_purchase_source_type' => ['label_key' => 'admin/settings/sync_adapters.abm_extra_purchase_source_type'],
+            'abm_purchase_source_id' => ['label_key' => 'admin/settings/sync_adapters.abm_extra_purchase_source_id'],
+            'abm_mdm_server' => ['label_key' => 'admin/settings/sync_adapters.abm_extra_mdm_server'],
             'abm_applecare_agreement_number' => ['label_key' => 'admin/settings/sync_adapters.extra_applecare_agreement_number'],
             'abm_applecare_status' => ['label_key' => 'admin/settings/sync_adapters.extra_applecare_status'],
             'abm_applecare_payment_type' => ['label_key' => 'admin/settings/sync_adapters.extra_applecare_payment_type'],
@@ -679,7 +695,7 @@ class AppleBusinessManagerAdapter extends ConfigurableAdapter
 
     /**
      * Which mode we're operating in: 'business' or 'school'. Stored
-     * plain-text as a credential value so credentialSchema() renders
+     * plain-text as a credential value so settingsSchema() renders
      * a normal text input. Anything other than 'school' resolves to
      * 'business' (the safer default that keeps admins from typoing
      * their way into the wrong host).

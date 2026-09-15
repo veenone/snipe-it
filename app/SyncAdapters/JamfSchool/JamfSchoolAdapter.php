@@ -26,17 +26,17 @@ class JamfSchoolAdapter extends ConfigurableAdapter
         return 'https://your-subdomain.jamfcloud.com/api';
     }
 
-    public function credentialSchema(): array
+    public function settingsSchema(): array
     {
         return [
             [
                 'key' => 'network_id',
-                'label' => 'Network ID',
+                'label' => trans('admin/settings/sync_adapters.label_network_id'),
                 'help' => trans('admin/settings/sync_adapters.jamf_school_network_id_help'),
             ],
             [
                 'key' => 'api_key',
-                'label' => 'API Key',
+                'label' => trans('admin/settings/sync_adapters.label_api_key'),
                 'secret' => true,
                 'help' => trans('admin/settings/sync_adapters.jamf_school_api_key_help'),
             ],
@@ -59,7 +59,7 @@ class JamfSchoolAdapter extends ConfigurableAdapter
 
     public function vendorGroupLabel(): string
     {
-        return 'Jamf School Location';
+        return trans('admin/settings/sync_adapters.vendor_group_jamf_school_location');
     }
 
     public function fetchGroups(): array

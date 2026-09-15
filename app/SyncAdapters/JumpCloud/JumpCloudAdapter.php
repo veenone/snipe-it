@@ -25,12 +25,12 @@ class JumpCloudAdapter extends ConfigurableAdapter
         return 'https://console.jumpcloud.com/api';
     }
 
-    public function credentialSchema(): array
+    public function settingsSchema(): array
     {
         return [
             [
                 'key' => 'token',
-                'label' => 'API Key',
+                'label' => trans('admin/settings/sync_adapters.label_api_key'),
                 'secret' => true,
                 'help' => trans('admin/settings/sync_adapters.jumpcloud_token_help'),
             ],

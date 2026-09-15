@@ -46,22 +46,22 @@ class WorkspaceOneAdapter extends ConfigurableAdapter implements PushableAdapter
         return 'https://as###.awmdm.com';
     }
 
-    public function credentialSchema(): array
+    public function settingsSchema(): array
     {
         return [
             [
                 'key' => 'tenant_code',
-                'label' => 'Tenant Code',
+                'label' => trans('admin/settings/sync_adapters.label_tenant_code'),
                 'help' => trans('admin/settings/sync_adapters.workspace_one_tenant_code_help'),
             ],
             [
                 'key' => 'client_id',
-                'label' => 'Client ID',
+                'label' => trans('admin/settings/sync_adapters.label_client_id'),
                 'help' => trans('admin/settings/sync_adapters.workspace_one_client_id_help'),
             ],
             [
                 'key' => 'client_secret',
-                'label' => 'Client Secret',
+                'label' => trans('admin/settings/sync_adapters.label_client_secret'),
                 'secret' => true,
                 'help' => trans('admin/settings/sync_adapters.workspace_one_client_secret_help'),
             ],

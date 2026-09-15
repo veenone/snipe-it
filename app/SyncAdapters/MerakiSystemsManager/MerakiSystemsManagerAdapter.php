@@ -29,18 +29,18 @@ class MerakiSystemsManagerAdapter extends ConfigurableAdapter
         return 'https://api.meraki.com/api/v1';
     }
 
-    public function credentialSchema(): array
+    public function settingsSchema(): array
     {
         return [
             [
                 'key' => 'api_key',
-                'label' => 'API Key',
+                'label' => trans('admin/settings/sync_adapters.label_api_key'),
                 'secret' => true,
                 'help' => trans('admin/settings/sync_adapters.meraki_sm_api_key_help'),
             ],
             [
                 'key' => 'organization_id',
-                'label' => 'Organization ID',
+                'label' => trans('admin/settings/sync_adapters.label_organization_id'),
                 'help' => trans('admin/settings/sync_adapters.meraki_sm_organization_id_help'),
             ],
         ];

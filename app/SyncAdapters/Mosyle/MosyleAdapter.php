@@ -30,12 +30,12 @@ class MosyleAdapter extends ConfigurableAdapter implements PushableAdapter
         return 'https://managerapi.mosyle.com/v2';
     }
 
-    public function credentialSchema(): array
+    public function settingsSchema(): array
     {
         return [
             [
                 'key' => 'token',
-                'label' => 'Access Token',
+                'label' => trans('admin/settings/sync_adapters.label_access_token'),
                 'secret' => true,
                 'help' => trans('admin/settings/sync_adapters.mosyle_token_help'),
             ],
@@ -57,7 +57,7 @@ class MosyleAdapter extends ConfigurableAdapter implements PushableAdapter
 
     public function vendorGroupLabel(): string
     {
-        return 'Mosyle Location';
+        return trans('admin/settings/sync_adapters.vendor_group_mosyle_location');
     }
 
     public function fetchGroups(): array

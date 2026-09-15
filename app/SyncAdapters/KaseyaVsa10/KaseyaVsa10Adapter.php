@@ -45,18 +45,18 @@ class KaseyaVsa10Adapter extends ConfigurableAdapter
         return 'https://your-tenant.vsax.net';
     }
 
-    public function credentialSchema(): array
+    public function settingsSchema(): array
     {
         return [
             [
                 'key' => 'token_id',
-                'label' => 'Token ID',
+                'label' => trans('admin/settings/sync_adapters.label_token_id'),
                 'secret' => true,
                 'help' => trans('admin/settings/sync_adapters.kaseya_vsa10_token_id_help'),
             ],
             [
                 'key' => 'token_secret',
-                'label' => 'Token Secret',
+                'label' => trans('admin/settings/sync_adapters.label_token_secret'),
                 'secret' => true,
                 'help' => trans('admin/settings/sync_adapters.kaseya_vsa10_token_secret_help'),
             ],
@@ -87,7 +87,7 @@ class KaseyaVsa10Adapter extends ConfigurableAdapter
                 continue;
             }
             $extras[$key] = [
-                'label' => 'Kaseya: '.$field['name'],
+                'label' => trans('admin/settings/sync_adapters.kaseya_vsa10_custom_field_label', ['name' => $field['name']]),
                 'type' => self::translateVendorType($field['type']),
                 'admin_defined' => true,
             ];
@@ -169,7 +169,7 @@ class KaseyaVsa10Adapter extends ConfigurableAdapter
 
     public function vendorGroupLabel(): string
     {
-        return 'Kaseya Organization';
+        return trans('admin/settings/sync_adapters.vendor_group_kaseya_organization');
     }
 
     public function fetchGroups(): array

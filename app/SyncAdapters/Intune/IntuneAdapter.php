@@ -40,22 +40,22 @@ class IntuneAdapter extends ConfigurableAdapter implements PushableAdapter
         return 'https://graph.microsoft.com';
     }
 
-    public function credentialSchema(): array
+    public function settingsSchema(): array
     {
         return [
             [
                 'key' => 'tenant_id',
-                'label' => 'Tenant ID',
+                'label' => trans('admin/settings/sync_adapters.label_tenant_id'),
                 'help' => trans('admin/settings/sync_adapters.intune_tenant_id_help'),
             ],
             [
                 'key' => 'client_id',
-                'label' => 'Client ID',
+                'label' => trans('admin/settings/sync_adapters.label_client_id'),
                 'help' => trans('admin/settings/sync_adapters.intune_client_id_help'),
             ],
             [
                 'key' => 'client_secret',
-                'label' => 'Client Secret',
+                'label' => trans('admin/settings/sync_adapters.label_client_secret'),
                 'secret' => true,
                 'help' => trans('admin/settings/sync_adapters.intune_client_secret_help'),
             ],

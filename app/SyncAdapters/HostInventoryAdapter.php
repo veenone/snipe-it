@@ -70,14 +70,6 @@ interface HostInventoryAdapter
     public function isBuiltIn(): bool;
 
     /**
-     * View name for the adapter's settings section, rendered inside a
-     * tab-pane on the shared /admin/adapters page. The view is included
-     * with the current adapter instance available so it can read its own
-     * state (e.g. getUrl(), credentialForDisplay(), isActive(), etc.).
-     */
-    public function settingsView(): string;
-
-    /**
      * Validation rules the controller runs against the save request
      * BEFORE handing it to saveConfig. Adapters declare their own
      * required fields + SSRF guards here (e.g. the ExternalUrl rule on

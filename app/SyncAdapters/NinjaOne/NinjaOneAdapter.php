@@ -43,23 +43,23 @@ class NinjaOneAdapter extends ConfigurableAdapter implements PushableAdapter
         return 'https://app.ninjarmm.com';
     }
 
-    public function credentialSchema(): array
+    public function settingsSchema(): array
     {
         return [
             [
                 'key' => 'client_id',
-                'label' => 'Client ID',
+                'label' => trans('admin/settings/sync_adapters.label_client_id'),
                 'help' => trans('admin/settings/sync_adapters.ninjaone_client_id_help'),
             ],
             [
                 'key' => 'client_secret',
-                'label' => 'Client Secret',
+                'label' => trans('admin/settings/sync_adapters.label_client_secret'),
                 'secret' => true,
                 'help' => trans('admin/settings/sync_adapters.ninjaone_client_secret_help'),
             ],
             [
                 'key' => 'asset_tag_custom_field',
-                'label' => 'Asset Tag Custom Field Name',
+                'label' => trans('admin/settings/sync_adapters.label_asset_tag_custom_field_name'),
                 'required' => false,
                 'help' => trans('admin/settings/sync_adapters.ninjaone_asset_tag_field_help'),
             ],

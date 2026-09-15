@@ -24,17 +24,17 @@ class AddigyAdapter extends ConfigurableAdapter
         return 'https://prod.addigy.com';
     }
 
-    public function credentialSchema(): array
+    public function settingsSchema(): array
     {
         return [
             [
                 'key' => 'key_id',
-                'label' => 'Client ID',
+                'label' => trans('admin/settings/sync_adapters.label_client_id'),
                 'help' => trans('admin/settings/sync_adapters.addigy_key_id_help'),
             ],
             [
                 'key' => 'key_secret',
-                'label' => 'Client Secret',
+                'label' => trans('admin/settings/sync_adapters.label_client_secret'),
                 'secret' => true,
                 'help' => trans('admin/settings/sync_adapters.addigy_key_secret_help'),
             ],

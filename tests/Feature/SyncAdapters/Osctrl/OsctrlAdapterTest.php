@@ -75,7 +75,7 @@ class OsctrlAdapterTest extends TestCase
 
         $adapter = new OsctrlAdapter($instance->fresh());
 
-        // Environment field is required (default in credentialSchema),
+        // Environment field is required (default in settingsSchema),
         // so isEnabled() must refuse until it's present. Prevents the
         // Sync Now button from becoming clickable on a half-configured
         // adapter.

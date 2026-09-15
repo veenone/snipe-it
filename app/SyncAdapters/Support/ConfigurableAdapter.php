@@ -16,7 +16,7 @@ use Illuminate\Support\Facades\Crypt;
  * secret storage, blank-preserves-existing save semantics, active +
  * heartbeat toggles, per-field target mapping, isEnabled().
  *
- * The one thing subclasses declare is their credentialSchema(): a
+ * The one thing subclasses declare is their settingsSchema(): a
  * list of the auth fields the vendor requires and whether each is a
  * secret (masked with a show/hide toggle) or plain text. That's
  * enough for the shared blade partial to render the form, for
@@ -79,7 +79,7 @@ abstract class ConfigurableAdapter implements HostInventoryAdapter
      *
      * @return array<int, array{key: string, label: string, type?: string, options?: array<string, string>, secret?: bool, required?: bool, help?: string|null, placeholder?: string|null, default?: array<int, string>|string|null}>
      */
-    abstract public function credentialSchema(): array;
+    abstract public function settingsSchema(): array;
 
     /**
      * Adapter-specific extra fields the vendor emits, keyed by the
@@ -106,6 +106,35 @@ abstract class ConfigurableAdapter implements HostInventoryAdapter
     public function extraFields(): array
     {
         return [];
+    }
+
+    /**
+     * Section titles + help copy for the settings schema. Adapters
+     * that group their credential fields via a `section` key on
+     * schema entries override this to give each section a labeled
+     * <fieldset> in the settings UI. Default is empty, in which case
+     * the credentials partial renders the schema entries flat.
+     *
+     * Expected shape:
+     *   ['section_key' => ['title' => string, 'help' => ?string], ...]
+     *
+     * @return array<string, array{title: string, help?: string}>
+     */
+    public function settingsSections(): array
+    {
+        return [];
+    }
+
+    /**
+     * Optional: name a settingsSections() key that should include
+     * the Base URL row. The shell opens the fieldset around Base URL
+     * and the credentials partial's schema loop continues rendering
+     * into the same fieldset for that section's entries. Returns null
+     * to keep Base URL rendered above the fieldsets (default).
+     */
+    public function baseUrlSection(): ?string
+    {
+        return null;
     }
 
     public function name(): string
@@ -138,7 +167,7 @@ abstract class ConfigurableAdapter implements HostInventoryAdapter
             return false;
         }
 
-        foreach ($this->credentialSchema() as $field) {
+        foreach ($this->settingsSchema() as $field) {
             if (($field['required'] ?? true) && ! SyncAdapterConfig::has($this->instance->id, $field['key'])) {
                 return false;
             }
@@ -180,11 +209,6 @@ abstract class ConfigurableAdapter implements HostInventoryAdapter
         return $this->instance->active ? 'partial' : 'inactive';
     }
 
-    public function settingsView(): string
-    {
-        return 'settings.adapters.adapter_credentials';
-    }
-
     /**
      * Rules the controller enforces before saveConfig() runs.
      * ExternalUrl blocks loopback / RFC-1918 / cloud-metadata targets
@@ -198,7 +222,7 @@ abstract class ConfigurableAdapter implements HostInventoryAdapter
         $slug = $this->instance->slug;
 
         $rules = [
-            $slug.'_asset_tag_pattern' => ['nullable', 'string', 'max:191'],
+            $slug.'_asset_tag_pattern' => ['nullable', 'string', 'max:191', new \App\Rules\AssetTagPatternRule],
             $slug.'_default_category_id' => ['required', 'integer', 'exists:categories,id'],
             $slug.'_default_status_id' => ['required', 'integer', 'exists:status_labels,id'],
             $slug.'_user_match_strategy' => ['nullable', 'string', 'in:none,email,username,username_then_email'],
@@ -208,7 +232,7 @@ abstract class ConfigurableAdapter implements HostInventoryAdapter
             $rules[$slug.'_url'] = ['required', new ExternalUrl];
         }
 
-        foreach ($this->credentialSchema() as $field) {
+        foreach ($this->settingsSchema() as $field) {
             // Auth fields default to required so admins can't save a
             // half-configured adapter that then silently refuses to
             // sync because isEnabled() returns false. Secret fields
@@ -235,6 +259,17 @@ abstract class ConfigurableAdapter implements HostInventoryAdapter
             // empty string to fall back to default_category_id).
             if ($type === 'category') {
                 $rules[$fieldName] = [$required ? 'required' : 'nullable', 'integer', 'exists:categories,id'];
+
+                continue;
+            }
+
+            // Field-map repeater posts as an associative array of
+            // {snipe_field: vendor_path}. Values are trimmed strings
+            // (dot-paths). Empty submissions produce an empty array,
+            // which persists as "{}" and reads back as no mappings.
+            if ($type === 'field_map') {
+                $rules[$fieldName] = [$required ? 'required' : 'nullable', 'array'];
+                $rules[$fieldName.'.*'] = ['nullable', 'string'];
 
                 continue;
             }
@@ -287,7 +322,7 @@ abstract class ConfigurableAdapter implements HostInventoryAdapter
      */
     private function persistCredentialsFromSchema(Request $request, string $slug): void
     {
-        foreach ($this->credentialSchema() as $field) {
+        foreach ($this->settingsSchema() as $field) {
             $fieldName = $slug.'_'.$field['key'];
             $type = $field['type'] ?? 'text';
 
@@ -330,6 +365,27 @@ abstract class ConfigurableAdapter implements HostInventoryAdapter
                     $this->instance->id,
                     $field['key'],
                     $value === null ? '' : (string) $value,
+                );
+
+                continue;
+            }
+
+            // Field-map repeater: assoc array of {field_key: path}.
+            // Empty submissions overwrite as {} so a deliberate
+            // "clear everything" from the UI sticks. Blank path
+            // values within the array are dropped so a mistakenly
+            // added empty row doesn't roundtrip.
+            if ($type === 'field_map') {
+                $values = (array) $request->input($fieldName, []);
+                $values = array_filter(
+                    $values,
+                    fn ($v, $k) => is_string($k) && $k !== '' && is_string($v) && trim($v) !== '',
+                    ARRAY_FILTER_USE_BOTH,
+                );
+                SyncAdapterConfig::put(
+                    $this->instance->id,
+                    $field['key'],
+                    json_encode($values),
                 );
 
                 continue;
@@ -1015,7 +1071,7 @@ abstract class ConfigurableAdapter implements HostInventoryAdapter
             );
         }
 
-        foreach ($this->credentialSchema() as $field) {
+        foreach ($this->settingsSchema() as $field) {
             if ($field['key'] !== $key) {
                 continue;
             }

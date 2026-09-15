@@ -35,18 +35,18 @@ class UnifiAdapter extends ConfigurableAdapter
         return 'https://your-controller:8443';
     }
 
-    public function credentialSchema(): array
+    public function settingsSchema(): array
     {
         return [
             [
                 'key' => 'api_key',
-                'label' => 'API Key',
+                'label' => trans('admin/settings/sync_adapters.label_api_key'),
                 'secret' => true,
                 'help' => trans('admin/settings/sync_adapters.unifi_api_key_help'),
             ],
             [
                 'key' => 'site_id',
-                'label' => 'Site ID',
+                'label' => trans('admin/settings/sync_adapters.label_site_id'),
                 'help' => trans('admin/settings/sync_adapters.unifi_site_id_help'),
             ],
         ];

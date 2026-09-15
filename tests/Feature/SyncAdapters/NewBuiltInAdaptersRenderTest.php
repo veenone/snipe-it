@@ -25,7 +25,7 @@ class NewBuiltInAdaptersRenderTest extends TestCase
             ->getContent();
 
         $this->assertStringContainsString('Mosyle', $html);
-        // Schema field label from MosyleAdapter::credentialSchema()
+        // Schema field label from MosyleAdapter::settingsSchema()
         $this->assertMatchesRegularExpression('/name="mosyle_token"/', $html);
     }
 

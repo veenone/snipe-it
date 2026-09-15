@@ -28,12 +28,12 @@ class KandjiAdapter extends ConfigurableAdapter implements PushableAdapter
         return 'https://your-subdomain.api.kandji.io';
     }
 
-    public function credentialSchema(): array
+    public function settingsSchema(): array
     {
         return [
             [
                 'key' => 'token',
-                'label' => 'API Token',
+                'label' => trans('admin/settings/sync_adapters.label_api_token'),
                 'secret' => true,
                 'help' => trans('admin/settings/sync_adapters.kandji_token_help'),
             ],
@@ -56,7 +56,7 @@ class KandjiAdapter extends ConfigurableAdapter implements PushableAdapter
 
     public function vendorGroupLabel(): string
     {
-        return 'Kandji Blueprint';
+        return trans('admin/settings/sync_adapters.vendor_group_kandji_blueprint');
     }
 
     public function fetchGroups(): array

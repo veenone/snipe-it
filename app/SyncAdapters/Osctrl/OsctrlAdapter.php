@@ -23,18 +23,18 @@ class OsctrlAdapter extends ConfigurableAdapter
         return 'osctrl';
     }
 
-    public function credentialSchema(): array
+    public function settingsSchema(): array
     {
         return [
             [
                 'key' => 'token',
-                'label' => 'API Token',
+                'label' => trans('admin/settings/sync_adapters.label_api_token'),
                 'secret' => true,
                 'help' => trans('admin/settings/sync_adapters.osctrl_token_help'),
             ],
             [
                 'key' => 'environment',
-                'label' => 'Environment',
+                'label' => trans('admin/settings/sync_adapters.label_environment'),
                 'help' => trans('admin/settings/sync_adapters.osctrl_environment_help'),
             ],
         ];

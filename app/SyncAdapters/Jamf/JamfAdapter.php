@@ -29,12 +29,12 @@ class JamfAdapter extends ConfigurableAdapter implements PushableAdapter
         return 'https://your-subdomain.jamfcloud.com';
     }
 
-    public function credentialSchema(): array
+    public function settingsSchema(): array
     {
         return [
             [
                 'key' => 'token',
-                'label' => 'API Token',
+                'label' => trans('admin/settings/sync_adapters.label_api_token'),
                 'secret' => true,
                 'help' => trans('admin/settings/sync_adapters.jamf_token_help'),
             ],
@@ -57,7 +57,7 @@ class JamfAdapter extends ConfigurableAdapter implements PushableAdapter
 
     public function vendorGroupLabel(): string
     {
-        return 'Jamf Site';
+        return trans('admin/settings/sync_adapters.vendor_group_jamf_site');
     }
 
     public function fetchGroups(): array
