@@ -27,7 +27,10 @@ class ReportTemplateShowAuthorizationTest extends TestCase
         $creator = User::factory()->create();
         $intruder = User::factory()->canViewReports()->create();
 
-        $private = ReportTemplate::factory()->for($creator, 'creator')->notShared()->create();
+        $private = ReportTemplate::factory()
+            ->for($creator, 'creator')
+            ->notShared()
+            ->create(['name' => 'report-template-show-oracle-' . uniqid()]);
 
         $response = $this->actingAs($intruder)
             ->get(route('report-templates.show', $private->id));
