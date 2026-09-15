@@ -37,7 +37,7 @@ return [
     'company_filter_label' => 'Filter by company',
     'company_filter_all' => 'All companies',
     'company_filter_shared' => 'Shared (no company)',
-    
+
     'readiness_active' => 'Active, configured and will sync',
     'readiness_partial' => 'Turned on but the configuration is incomplete',
     'readiness_inactive' => 'Turned off',
@@ -214,7 +214,7 @@ return [
 
     // Extras / mapping section wrappers
     'extra_fields_section_title' => ':type-specific fields',
-    'extra_fields_section_intro' => 'Additional vendor fields that don\'t have a corresponding Snipe-IT field. ',
+    'extra_fields_section_intro' => 'Additional vendor fields that don\'t have a corresponding Snipe-IT field. These can be mapped to custom fields or native Snipe-IT columns in the field-mapping section below. Boolean values can be mapped to checkbox-type custom fields, text fields can be mapped to text-type custom fields.',
 
     /*
     |--------------------------------------------------------------------------
