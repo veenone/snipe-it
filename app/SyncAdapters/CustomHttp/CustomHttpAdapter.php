@@ -354,7 +354,7 @@ class CustomHttpAdapter extends ConfigurableAdapter implements PushableAdapter
     public function validationRules(): array
     {
         $rules = parent::validationRules();
-        $rules[$this->instance->slug.'_extras_definition'] = [
+        $rules[$this->instance->slug . '_extras_definition'] = [
             'nullable',
             'string',
             new \App\Rules\CustomHttpExtrasJsonRule,
@@ -421,11 +421,12 @@ class CustomHttpAdapter extends ConfigurableAdapter implements PushableAdapter
     public function push(Asset $asset, array $changedFields = []): void
     {
         $externalSource = $this->pushPrologue($asset, $changedFields);
-        if ($externalSource === null) {
+        if ($externalSource === null || !$this->canPush()) {
             return;
         }
 
-        if (! $this->canPush()) {
+        [$payload, $touched] = $this->buildPushPayload($asset);
+        if ($payload === []) {
             return;
         }
 
@@ -433,13 +434,43 @@ class CustomHttpAdapter extends ConfigurableAdapter implements PushableAdapter
         // URL it targets that base URL exactly, which some APIs
         // accept for record-scoped writes when the id is inside the
         // request body rather than the path.
-        $pushPath = $this->safeCredential('push_path');
+        $endpoint = rtrim($this->url(), '/') . $this->resolvedPushPath($this->safeCredential('push_path'), (string) $externalSource->external_id);
+        $method = $this->resolvedPushMethod();
 
+        if ($this->isPushDryRun()) {
+            Log::channel('sync-adapters')->info(sprintf(
+                '%s push [dry-run]: would %s %s with %s',
+                $this->name(),
+                $method,
+                $endpoint,
+                json_encode($payload, JSON_UNESCAPED_SLASHES),
+            ));
+
+            return;
+        }
+
+        $this->dispatchPushRequest($method, $endpoint, $payload, $touched);
+    }
+
+    /**
+     * Build the JSON body for a push, driven by the admin's field-map
+     * paths (standard fields) plus the composed-notes template if one
+     * is configured. Returns the payload and the flat list of dot-paths
+     * that were written, for the post-push audit log line.
+     *
+     * Empty payload means nothing was mapped OR every mapped field on
+     * this asset was null: caller uses that as the signal to skip the
+     * HTTP round-trip entirely.
+     *
+     * @return array{0: array<string, mixed>, 1: array<int, string>}
+     */
+    private function buildPushPayload(Asset $asset): array
+    {
         $payload = [];
         $touched = [];
         $fieldPaths = $this->fieldPathMap();
         foreach ($this->pushDirectedFields() as $field) {
-            if (! in_array($field, self::PUSHABLE_STANDARD_FIELDS, true)) {
+            if (!in_array($field, self::PUSHABLE_STANDARD_FIELDS, true)) {
                 continue;
             }
             $path = $fieldPaths[$field] ?? '';
@@ -463,33 +494,35 @@ class CustomHttpAdapter extends ConfigurableAdapter implements PushableAdapter
             }
         }
 
-        if ($payload === []) {
-            return;
-        }
+        return [$payload, $touched];
+    }
 
-        $endpoint = rtrim($this->url(), '/').$this->resolvedPushPath($pushPath, (string) $externalSource->external_id);
+    /**
+     * Resolve the admin-configured HTTP verb, upper-casing the stored
+     * value and falling back to PATCH for anything not in the accepted
+     * set. 'disabled' never actually reaches here because canPush()
+     * bails upstream, but the fallback covers it defensively along
+     * with any unrecognized user input.
+     */
+    private function resolvedPushMethod(): string
+    {
         $method = strtoupper($this->safeCredential('push_method')) ?: 'PATCH';
-        // Only real HTTP verbs get sent. Fall back to PATCH for
-        // 'disabled' (shouldn't reach here because canPush() bails
-        // upstream) or any unrecognized value.
-        if (! in_array($method, ['PATCH', 'PUT', 'POST'], true)) {
-            $method = 'PATCH';
-        }
 
-        if ($this->isPushDryRun()) {
-            Log::channel('sync-adapters')->info(sprintf(
-                '%s push [dry-run]: would %s %s with %s',
-                $this->name(),
-                $method,
-                $endpoint,
-                json_encode($payload, JSON_UNESCAPED_SLASHES),
-            ));
+        return in_array($method, ['PATCH', 'PUT', 'POST'], true) ? $method : 'PATCH';
+    }
 
-            return;
-        }
-
-        $request = Http::acceptJson()->timeout(30);
-        $request = $this->applyAuth($request);
+    /**
+     * Fire the HTTP request and log the outcome. Failures fail soft:
+     * the exception is logged with the request shape and we
+     * return cleanly so a single vendor-side error doesn't abort the
+     * enclosing push loop for other assets.
+     *
+     * @param  array<string, mixed>  $payload
+     * @param  array<int, string>  $touched
+     */
+    private function dispatchPushRequest(string $method, string $endpoint, array $payload, array $touched): void
+    {
+        $request = $this->applyAuth(Http::acceptJson()->timeout(30));
 
         try {
             $request->send($method, $endpoint, ['json' => $payload])->throw();
@@ -530,8 +563,8 @@ class CustomHttpAdapter extends ConfigurableAdapter implements PushableAdapter
             return '';
         }
         $path = str_replace('{external_id}', rawurlencode($externalId), $template);
-        if (! str_starts_with($path, '/')) {
-            $path = '/'.$path;
+        if (!str_starts_with($path, '/')) {
+            $path = '/' . $path;
         }
 
         return $path;
@@ -541,7 +574,7 @@ class CustomHttpAdapter extends ConfigurableAdapter implements PushableAdapter
      * Snipe-IT's canonical source for each push-directed standard
      * field. Only the columns Snipe-IT owns authoritatively
      * (hostname, serial, asset_tag, model) are pushable, so this
-     * returns null for anything else and the caller drops it from
+     * returns null for anything else and we drop it from
      * the payload.
      */
     private static function assetValueForSourceField(Asset $asset, string $field): mixed
@@ -573,57 +606,10 @@ class CustomHttpAdapter extends ConfigurableAdapter implements PushableAdapter
             return;
         }
 
-        $recordsPath = $this->safeCredential('records_path');
-        $paginationStyle = $this->safeCredential('pagination_style') ?: 'none';
-        $pageSize = max(1, (int) ($this->safeCredential('pagination_page_size') ?: 500));
-        $limitParam = $this->safeCredential('pagination_limit_param') ?: 'limit';
-        $offsetParam = $this->safeCredential('pagination_offset_param') ?: 'offset';
-        $pageParam = $this->safeCredential('pagination_page_param') ?: 'page';
-        // Explicit null/empty check because "0" is a valid pageStart
-        // (zero-based APIs) but "0" ?: 1 would coerce to 1.
-        $pageStartRaw = $this->safeCredential('pagination_page_start');
-        $pageStart = $pageStartRaw === '' ? 1 : (int) $pageStartRaw;
-        $nextPath = $this->safeCredential('pagination_next_path');
-
-        $offset = 0;
-        $pageNumber = $pageStart;
-        $nextUrl = null;
-        $pageIndex = 0;
         $globalIndex = 0;
-
-        while ($pageIndex < self::PAGINATION_MAX_PAGES) {
-            // Offset-limit style keeps re-hitting the same pull_path with
-            // increasing offsets. Page-number style does the same with
-            // an incrementing page counter (1-based by default, though
-            // pagination_page_start lets 0-based APIs opt in). next-url
-            // style follows the URL the previous response handed back.
-            // First iteration of every style starts on the configured
-            // pull_path.
-            if ($paginationStyle === 'offset_limit') {
-                $body = $this->fetchResponseBody(null, [$limitParam => $pageSize, $offsetParam => $offset]);
-            } elseif ($paginationStyle === 'page_number') {
-                $body = $this->fetchResponseBody(null, [$limitParam => $pageSize, $pageParam => $pageNumber]);
-            } else {
-                $body = $this->fetchResponseBody($nextUrl, []);
-            }
-            if ($body === null) {
-                return;
-            }
-
-            $records = self::dotPathGet($body, $recordsPath);
-            if (! is_array($records)) {
-                Log::channel('sync-adapters')->warning(sprintf(
-                    '%s pull expected an array at records path "%s", got %s',
-                    $this->name(),
-                    $recordsPath,
-                    get_debug_type($records),
-                ));
-
-                return;
-            }
-
+        foreach ($this->paginate() as $records) {
             foreach ($records as $record) {
-                if (! is_array($record)) {
+                if (!is_array($record)) {
                     $globalIndex++;
 
                     continue;
@@ -643,12 +629,76 @@ class CustomHttpAdapter extends ConfigurableAdapter implements PushableAdapter
                 yield $normalized;
                 $globalIndex++;
             }
+        }
+    }
+
+    /**
+     * Walk the vendor's paginated response and yield one page's records
+     * array per iteration.
+     *
+     * Yields nothing (returns cleanly) on the terminal conditions:
+     * body fetch failed, records path did not resolve to an array,
+     * server signaled the last page (short page for offset/page,
+     * missing next-URL for next_url), or the PAGINATION_MAX_PAGES
+     * cap was hit.
+     *
+     * @return iterable<int, array<int, mixed>>
+     */
+    private function paginate(): iterable
+    {
+        $recordsPath = $this->safeCredential('records_path');
+        $paginationStyle = $this->safeCredential('pagination_style') ?: 'none';
+        $pageSize = max(1, (int) ($this->safeCredential('pagination_page_size') ?: 500));
+        $limitParam = $this->safeCredential('pagination_limit_param') ?: 'limit';
+        $offsetParam = $this->safeCredential('pagination_offset_param') ?: 'offset';
+        $pageParam = $this->safeCredential('pagination_page_param') ?: 'page';
+        // Explicit null/empty check because "0" is a valid pageStart
+        // (zero-based APIs) but "0" ?: 1 would coerce to 1.
+        $pageStartRaw = $this->safeCredential('pagination_page_start');
+        $pageStart = $pageStartRaw === '' ? 1 : (int) $pageStartRaw;
+        $nextPath = $this->safeCredential('pagination_next_path');
+
+        $offset = 0;
+        $pageNumber = $pageStart;
+        $nextUrl = null;
+        $pageIndex = 0;
+
+        while ($pageIndex < self::PAGINATION_MAX_PAGES) {
+            // Offset-limit style keeps re-hitting the same pull_path with
+            // increasing offsets. Page-number style does the same with
+            // an incrementing page counter (1-based by default, though
+            // pagination_page_start lets 0-based APIs opt in). next-url
+            // style follows the URL the previous response handed back.
+            // First iteration of every style starts on the configured
+            // pull_path.
+            $body = match ($paginationStyle) {
+                'offset_limit' => $this->fetchResponseBody(null, [$limitParam => $pageSize, $offsetParam => $offset]),
+                'page_number' => $this->fetchResponseBody(null, [$limitParam => $pageSize, $pageParam => $pageNumber]),
+                default => $this->fetchResponseBody($nextUrl, []),
+            };
+            if ($body === null) {
+                return;
+            }
+
+            $records = self::dotPathGet($body, $recordsPath);
+            if (!is_array($records)) {
+                Log::channel('sync-adapters')->warning(sprintf(
+                    '%s pull expected an array at records path "%s", got %s',
+                    $this->name(),
+                    $recordsPath,
+                    get_debug_type($records),
+                ));
+
+                return;
+            }
+
+            yield $records;
 
             $pageIndex++;
 
-            // Terminate: none = single page. offset_limit = last page
-            // seen (fewer records than page_size). next_url = the
-            // response body no longer contains a next-page URL.
+            // Terminate: none = single page. offset_limit / page_number
+            // = last page seen (fewer records than page_size). next_url
+            // = the response body no longer contains a next-page URL.
             if ($paginationStyle === 'none') {
                 return;
             }
@@ -693,7 +743,7 @@ class CustomHttpAdapter extends ConfigurableAdapter implements PushableAdapter
      * Issue the configured HTTP GET and return the decoded body.
      * Any auth-misconfiguration, network, or non-2xx response fails
      * soft: log a warning on the sync-adapters channel and return
-     * null so the caller yields nothing rather than crashing the
+     * null so we yield nothing rather than crashing the
      * sync run.
      *
      * $overrideUrl is used by next-url pagination to follow the
@@ -720,10 +770,10 @@ class CustomHttpAdapter extends ConfigurableAdapter implements PushableAdapter
             }
 
             $pullPath = $this->safeCredential('pull_path');
-            if ($pullPath !== '' && ! str_starts_with($pullPath, '/')) {
-                $pullPath = '/'.$pullPath;
+            if ($pullPath !== '' && !str_starts_with($pullPath, '/')) {
+                $pullPath = '/' . $pullPath;
             }
-            $endpoint = $baseUrl.$pullPath;
+            $endpoint = $baseUrl . $pullPath;
         }
 
         $request = Http::acceptJson()->timeout(30);
@@ -783,7 +833,7 @@ class CustomHttpAdapter extends ConfigurableAdapter implements PushableAdapter
         // vendor payload that unexpectedly nests something at the
         // source_id path (or that returned the whole record because
         // the path was blank) yields null instead of a fatal (string)
-        // cast on an array. Caller skips the record.
+        // cast on an array. Skip the record.
         $sourceId = self::stringOrNull(self::dotPathGet($record, $fieldPaths['source_id']));
         if ($sourceId === null || $sourceId === '') {
             return null;
@@ -846,7 +896,7 @@ class CustomHttpAdapter extends ConfigurableAdapter implements PushableAdapter
 
         $current = $data;
         foreach (explode('.', $path) as $segment) {
-            if (! is_array($current)) {
+            if (!is_array($current)) {
                 return null;
             }
             if (array_key_exists($segment, $current)) {
@@ -871,7 +921,7 @@ class CustomHttpAdapter extends ConfigurableAdapter implements PushableAdapter
         if ($value === null) {
             return null;
         }
-        if (! is_scalar($value)) {
+        if (!is_scalar($value)) {
             return null;
         }
 
@@ -907,10 +957,7 @@ class CustomHttpAdapter extends ConfigurableAdapter implements PushableAdapter
      * Decode the field_paths JSON blob into a {snipe_field: path}
      * map, keyed by every option in fieldPathOptions() plus the
      * standalone source_id_path credential. Missing fields default
-     * to '' so callers can `$map[$field] ?? ''` without an isset
-     * guard. Malformed / empty storage returns the all-blank
-     * baseline (with source_id populated from its own field when
-     * set).
+     * to ''.
      *
      * @return array<string, string>
      */
@@ -918,7 +965,7 @@ class CustomHttpAdapter extends ConfigurableAdapter implements PushableAdapter
     {
         $baseline = array_fill_keys(array_keys(self::fieldPathOptions()), '');
         // source_id lives outside the repeater as its own required
-        // input, so merge it in here to give callers a uniform
+        // input, so merge it in here to give a uniform
         // $map['source_id'] lookup.
         $baseline['source_id'] = $this->safeCredential('source_id_path');
 
@@ -928,7 +975,7 @@ class CustomHttpAdapter extends ConfigurableAdapter implements PushableAdapter
         }
 
         $decoded = json_decode($raw, true);
-        if (! is_array($decoded)) {
+        if (!is_array($decoded)) {
             return $baseline;
         }
 
@@ -956,13 +1003,13 @@ class CustomHttpAdapter extends ConfigurableAdapter implements PushableAdapter
         }
 
         $decoded = json_decode($raw, true);
-        if (! is_array($decoded)) {
+        if (!is_array($decoded)) {
             return [];
         }
 
         $out = [];
         foreach ($decoded as $entry) {
-            if (! is_array($entry) || ! isset($entry['key'], $entry['path'])) {
+            if (!is_array($entry) || !isset($entry['key'], $entry['path'])) {
                 continue;
             }
             $out[] = [
