@@ -9589,6 +9589,18 @@ parameters:
 			path: app/Providers/ValidationServiceProvider.php
 
 		-
+			message: '#^Access to an undefined property App\\Models\\LicenseSeat\:\:\$created_by\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/PredefinedKitCheckoutService.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Relations\\Relation\:\:attach\(\)\.$#'
+			identifier: method.notFound
+			count: 2
+			path: app/Services/PredefinedKitCheckoutService.php
+
+		-
 			message: '#^Call to function is_null\(\) with App\\Models\\User will always evaluate to false\.$#'
 			identifier: function.impossibleType
 			count: 1
