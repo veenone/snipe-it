@@ -21,6 +21,7 @@ return [
     'base_url_help' => 'The base URL of your :type instance.',
     'pull_now' => 'Pull Now',
     'push_now' => 'Push Now',
+    'unsaved_changes_before_sync' => 'Save your configuration changes before syncing. Pull Now and Push Now use the last-saved settings, so unsaved edits would not take effect.',
     'push_complete' => 'Push complete. Pushed :count asset(s), :errors error(s).',
     'push_failed' => 'Push failed: :summary. See storage/logs/sync-adapters.log for full details.',
     'push_not_supported' => 'This adapter does not support pushing data to the vendor.',
@@ -60,7 +61,6 @@ return [
     'direction_both' => 'Both (last-write-wins)',
     'direction_skip' => 'Skip',
     'active_label' => 'Active',
-    'active_help' => 'When off, scheduled runs and manual Pull Now / Push Now clicks all skip this adapter. Stored credentials stay intact so you can re-enable without reconfiguring.',
 
     // Field-mapping fieldset
     'mapping_section_title' => ':type field mapping',
@@ -78,6 +78,9 @@ return [
     'field_os' => 'Operating system',
     'field_os_version' => 'OS version',
     'field_last_seen' => 'Last seen (network heartbeat)',
+    'field_manufacturer' => 'Manufacturer',
+    'field_assigned_user_email' => 'Assigned user email',
+    'field_assigned_user_name' => 'Assigned user name',
     'field_asset_name' => 'Asset name',
     'field_asset_serial' => 'Asset serial number',
     'field_asset_model' => 'Asset model (auto-created if missing)',
@@ -104,6 +107,8 @@ return [
     'log_heartbeats_help' => 'By default, syncs that only update the last-seen timestamp are not written to the asset history to avoid heartbeat noise. Turn this on to record every sync as a history entry.',
     'asset_tag_pattern' => 'Asset tag pattern',
     'asset_tag_pattern_help' => 'Applied only to newly-created assets from this adapter. Supported placeholders: <code>{serial}</code>, <code>{external_id}</code>, <code>{hostname}</code>, <code>{model}</code>, <code>{source}</code>. Leave blank to fall back to Snipe-IT\'s auto-increment setting. If auto-increment is also off, the asset tag defaults to <code>{source}-{external_id}</code>. Assets already synced keep their existing asset tag.',
+    'defaults_section_title' => 'Asset defaults and user matching',
+    'defaults_section_intro' => 'How Snipe-IT should handle new assets and user assignments coming from this adapter.',
     'default_category' => 'Model Category',
     'default_category_help' => 'When a device from this adapter reports a hardware model that doesn\'t exist in Snipe-IT yet, a new asset model is created and placed in this category. Leave blank to use the "Discovered Hardware" category.',
     'default_status' => 'Default Status Label',
@@ -122,12 +127,12 @@ return [
     'push_dry_run_label' => 'Dry-run push (log payloads, do not send)',
     'push_dry_run_help' => 'When on, Push Now builds every payload and writes it to the sync-adapters log without calling the vendor API. Useful for verifying your direction + mapping configuration end-to-end before flipping the switch on real data.',
     'push_notes_section_title' => 'Composite Field',
-    'push_notes_section_intro' => 'Optional composite field where you can assemble multiple attributes from an asset and push it into a compatible field on the vendor side. This is useful for vendors that do not support multiple fields or custom attributes, but do support a single notes field.',
+    'push_notes_section_intro' => 'Optional composite field where you can assemble multiple attributes from an asset in Snipe-IT and push it into a compatible field on the vendor side. This is useful for vendors that do not support multiple fields or custom attributes, but do support a single notes field.',
     'push_notes_target_label' => 'Vendor field',
     'push_notes_target_help' => 'Vendor field the composed notes get written to. Leave blank to use the adapter\'s default (shown as placeholder). Set to a Custom Attribute / Custom Field name if you want the composed notes to be pushed to a specific vendor-side field instead of the default notes column.',
     'push_notes_target_placeholder_none' => 'No default (specify a target)',
     'push_notes_template_label' => 'Template',
-    'push_notes_template_help' => 'Blade-style template rendered per asset and pushed to the vendor field above. Leave blank to skip notes push. Placeholders: <code>{asset_tag}</code>, <code>{name}</code>, <code>{serial}</code>, <code>{model}</code>, <code>{manufacturer}</code>, <code>{category}</code>, <code>{status}</code>, <code>{status_type}</code>, <code>{assigned_to}</code>, <code>{assigned_to_email}</code>, <code>{assigned_to_username}</code>, <code>{location}</code>, <code>{company}</code>, <code>{supplier}</code>, <code>{last_checkout}</code>, <code>{last_checkin}</code>, <code>{expected_checkin}</code>, <code>{notes}</code>, <code>{order_number}</code>, <code>{purchase_date}</code>, <code>{purchase_cost}</code>, <code>{warranty_months}</code>, <code>{warranty_expires}</code>. Custom fields: <code>{custom.Field Name}</code>. Unknown or empty placeholders render as blank.',
+    'push_notes_template_help' => 'Blade-style template rendered per asset and pushed to the vendor field above. Leave blank to skip notes push. Placeholders: <code>{asset_tag}</code>, <code>{name}</code>, <code>{serial}</code>, <code>{model}</code>, <code>{manufacturer}</code>, <code>{category}</code>, <code>{status}</code>, <code>{status_type}</code>, <code>{assigned_to}</code>, <code>{assigned_to_email}</code>, <code>{assigned_to_username}</code>, <code>{location}</code>, <code>{company}</code>, <code>{supplier}</code>, <code>{last_checkout}</code>, <code>{last_checkin}</code>, <code>{expected_checkin}</code>, <code>{notes}</code>, <code>{order_number}</code>, <code>{purchase_date}</code>, <code>{purchase_cost}</code>, <code>{warranty_months}</code>, <code>{warranty_expires}</code>. Custom fields: <code>{custom.Field Name}</code>, where <code>Field Name</code> is the exact custom field name as shown in the Custom Fields admin (case-sensitive), NOT the internal <code>db_column</code>. Unknown or empty placeholders render as blank.',
 
     // Group scoping
     'group_mapping_title' => ':label to Snipe-IT company mapping',
@@ -178,6 +183,51 @@ return [
     'abm_pull_model_images_help' => 'Fetch product images from appledb.dev when auto-populating asset models from ABM devices. Existing model images are never overwritten. The category image serves only as a display fallback for models that have none.',
     'abm_category_family_label' => 'Category for :family',
     'abm_category_family_help' => 'Route the :family product family to a specific category, overriding the default category above. Leave blank to inherit the default.',
+    'abm_section_categories_title' => 'Category mapping by product family',
+
+    // Custom HTTP adapter
+    'custom_auth_method_help' => 'How the adapter authenticates against your API. <code>Bearer</code> sends a Bearer token in the <code>Authorization</code> header. <code>Basic</code> sends username + password. <code>API Key</code> sends the value in a custom header. <code>None</code> sends no auth headers.',
+    'custom_bearer_token_help' => 'Used when Authentication Method is set to <code>Bearer Token</code>. The value is sent as the <code>Authorization: Bearer &lt;token&gt;</code> header.',
+    'custom_basic_username_help' => 'Used when Authentication Method is set to <code>Basic Auth</code>.',
+    'custom_basic_password_help' => 'Used when Authentication Method is set to <code>Basic Auth</code>.',
+    'custom_api_key_header_help' => 'The header name your API expects, e.g. <code>X-API-Key</code> or <code>X-Auth-Token</code>. Used when Authentication Method is set to <code>API Key Header</code>.',
+    'custom_api_key_value_help' => 'The value sent in the header configured above.',
+    'custom_pull_path_help' => 'Path appended to the Base URL when pulling, e.g. <code>/api/v1/devices</code>. Leave blank to hit the base URL itself.',
+    'custom_records_path_help' => 'Dot-path into the JSON response where the records array lives, e.g. <code>data.devices</code> or <code>results</code>. Leave blank when the response is already an array at the root.',
+    'custom_source_id_path_help' => 'Required. Dot-path within one record pointing at the vendor\'s stable unique id for that record, e.g. <code>id</code>, <code>uuid</code>, or <code>serial_number</code>. Snipe-IT uses this value to match records across sync runs so subsequent pulls update the same asset rather than creating duplicates.',
+    'custom_pagination_style_help' => 'How the adapter walks past the vendor\'s first page of results. <code>None</code> sends a single request and stops. <code>Offset + Limit</code> re-hits the same endpoint with <code>?limit=X&offset=Y</code> params. <code>Page Number + Limit</code> re-hits with <code>?limit=X&page=N</code> (Snipe-IT API, Laravel-style APIs). <code>Next URL</code> follows an absolute URL returned in each response.',
+    'custom_pagination_page_size_help' => 'Number of records requested per page. Defaults to <code>500</code>.',
+    'custom_pagination_limit_param_help' => 'Name of the query parameter that carries the page size, e.g. <code>limit</code>, <code>per_page</code>, or <code>page_size</code>.',
+    'custom_pagination_offset_param_help' => 'Name of the query parameter that carries the starting offset, e.g. <code>offset</code>, <code>start</code>, or <code>skip</code>.',
+    'custom_pagination_page_param_help' => 'Name of the query parameter that carries the page number, e.g. <code>page</code> or <code>p</code>.',
+    'custom_pagination_page_start_help' => 'The number to use for the first page. Defaults to <code>1</code>. Set to <code>0</code> for APIs that number pages from zero.',
+    'custom_pagination_next_path_help' => 'Dot-path into the response body pointing at the absolute URL of the next page, e.g. <code>links.next</code> or <code>meta.next_page_url</code>. When the path resolves to blank or missing, pagination stops.',
+    'custom_field_paths_label' => 'Vendor Response Paths',
+    'custom_field_paths_help' => 'This section tells the adapter WHERE to find each field in your vendor\'s JSON response. Pick a Snipe-IT field, type the dot-path where your API returns that value in one record (e.g. <code>hardware.serial</code>), then click Add. Which Snipe-IT column each field lands in, and whether it flows pull / push / both, is configured in the field-mapping section further down.',
+    'field_map_column_field' => 'Snipe-IT Field',
+    'field_map_column_path' => 'Vendor Dot-Path',
+    'field_map_empty' => 'No fields mapped yet.',
+    'field_map_pick_field' => 'Pick a field',
+    'field_map_new_path' => 'Dot-path (e.g. hardware.serial)',
+    'custom_extras_definition_help' => 'Optional. JSON array declaring additional vendor fields you want available in the mapping table below. Shape: <code>[{"key": "vendor_field", "label": "Human Label", "path": "dot.path.to.value"}]</code>. Each entry appears in the extras list where you can route it to a custom field or a native column.',
+    'custom_push_method_help' => 'HTTP method the adapter uses when pushing updates back to your API. Defaults to <code>PATCH</code>.',
+    'custom_push_path_help' => 'Path appended to the Base URL when pushing. Supports the <code>{external_id}</code> placeholder, which is replaced with the vendor-side device id recorded during the last pull for each asset. Leave blank to hit the Base URL directly (useful when your API accepts the id in the request body instead of the URL). To disable push entirely, set Push HTTP Method to <code>Disabled</code>.',
+    'custom_push_notes_target_help' => 'Optional. Dot-path in the outgoing payload where the composed Push Notes template value should land, e.g. <code>metadata.notes</code>. Leave blank if you are not using composed notes.',
+
+    // Section headings for the CustomHttpAdapter settings page. Sections
+    // group the credential-schema entries into labeled fieldsets so admins
+    // can find auth / pull / pagination / push clusters at a glance.
+    'custom_section_auth_title' => 'Authentication',
+    'custom_section_auth_help' => 'How the adapter identifies itself to your API.',
+    'custom_section_pull_title' => 'Pull Endpoint',
+    'custom_section_pull_help' => 'Where the adapter fetches records from and how it locates them inside the JSON response.',
+    'custom_section_pagination_title' => 'Pagination',
+    'custom_section_pagination_help' => 'How the adapter walks past the first page of results. Choose <code>None</code> for single-page endpoints.',
+    'custom_section_extras_title' => 'Custom Extras',
+    'custom_section_extras_help' => 'Additional vendor fields not covered by the standard Snipe-IT mapping. Configuration for each extra field is done in the mapping section further down.',
+    'custom_section_push_title' => 'Push Endpoint',
+    'custom_section_push_help' => 'How the adapter writes updates back to your API. Set Push HTTP Method to <code>Disabled</code> to keep this instance pull-only.',
+    'custom_url_prefix_base_url_placeholder' => 'Base URL:',
 
     // Extras / mapping section wrappers
     'extra_fields_section_title' => ':type-specific fields',
@@ -246,4 +296,99 @@ return [
     'extra_applecare_is_canceled' => 'AppleCare Is Canceled',
     'extra_applecare_is_renewable' => 'AppleCare Is Renewable',
     'extra_osquery_version' => 'osquery Version',
+
+    // Shared label strings for adapter settings schemas. Adapters
+    // reach for these via trans() so the labels localize alongside
+    // the help copy instead of shipping as hardcoded English.
+    'label_client_id' => 'Client ID',
+    'label_client_secret' => 'Client Secret',
+    'label_api_token' => 'API Token',
+    'label_api_key' => 'API Key',
+    'label_bearer_token' => 'Bearer Token',
+    'label_basic_auth_username' => 'Basic Auth Username',
+    'label_basic_auth_password' => 'Basic Auth Password',
+    'label_api_key_header_name' => 'API Key Header Name',
+    'label_api_key_value' => 'API Key Value',
+    'label_authentication_method' => 'Authentication Method',
+    'label_pull_endpoint_path' => 'Pull Endpoint Path',
+    'label_records_array_path' => 'Records Array Path',
+    'label_source_id_path' => 'Source ID Path',
+    'label_push_endpoint_path' => 'Push Endpoint Path',
+    'label_push_http_method' => 'Push HTTP Method',
+    'label_push_notes_target_path' => 'Push Notes Target Path',
+    'label_pagination_style' => 'Pagination Style',
+    'label_page_size' => 'Page Size',
+    'label_limit_query_parameter' => 'Limit Query Parameter',
+    'label_offset_query_parameter' => 'Offset Query Parameter',
+    'label_page_query_parameter' => 'Page Query Parameter',
+    'label_first_page_number' => 'First Page Number',
+    'label_next_page_url_path' => 'Next Page URL Path',
+    'label_custom_extras_json' => 'Custom Extras (JSON)',
+    'label_access_token' => 'Access Token',
+    'label_tenant_id' => 'Tenant ID',
+    'label_tenant_code' => 'Tenant Code',
+    'label_network_id' => 'Network ID',
+    'label_site_id' => 'Site ID',
+    'label_organization_id' => 'Organization ID',
+    'label_environment' => 'Environment',
+    'label_token_id' => 'Token ID',
+    'label_token_secret' => 'Token Secret',
+    'label_asset_tag_custom_field_name' => 'Asset Tag Custom Field Name',
+
+    // Vendor group scoping labels. Each adapter that supports group
+    // scoping returns one of these from vendorGroupLabel(), rendered
+    // in the Group Mapping fieldset legend and help text ("Fleet
+    // Team", "Jamf Site", etc. -- the vendor's own name for what we
+    // scope by).
+    'vendor_group_addigy_policy' => 'Addigy Policy',
+    'vendor_group_fleet_team' => 'Fleet Team',
+    'vendor_group_jamf_site' => 'Jamf Site',
+    'vendor_group_jamf_school_location' => 'Jamf School Location',
+    'vendor_group_kandji_blueprint' => 'Kandji Blueprint',
+    'vendor_group_mosyle_location' => 'Mosyle Location',
+    'vendor_group_kaseya_organization' => 'Kaseya Organization',
+
+    // Kaseya-specific label prefix for tenant-defined custom fields
+    // captured by the "Refresh custom fields" button. Rendered in the
+    // extras mapping table for each Kaseya custom field the tenant
+    // has defined, so admins recognize them as coming from Kaseya
+    // rather than any built-in Snipe-IT extra.
+    'kaseya_vsa10_custom_field_label' => 'Kaseya: :name',
+
+    // ABM adapter-specific labels + option strings.
+    'abm_label_portal' => 'Portal',
+    'abm_label_key_id' => 'Key ID',
+    'abm_label_private_key' => 'Private Key (PEM)',
+    'abm_label_product_families' => 'Product Families',
+    'abm_label_pull_model_images' => 'Pull model images from appledb.dev',
+    'abm_option_mode_business' => 'Apple Business Manager',
+    'abm_option_mode_school' => 'Apple School Manager',
+
+    // Custom HTTP option strings.
+    'custom_option_auth_bearer' => 'Bearer Token',
+    'custom_option_auth_basic' => 'Basic Auth',
+    'custom_option_auth_api_key' => 'API Key Header',
+    'custom_option_auth_none' => 'No Auth',
+    'custom_option_push_disabled' => 'Disabled (pull only)',
+    'custom_option_pagination_none' => 'No pagination (single page)',
+    'custom_option_pagination_offset_limit' => 'Offset + Limit',
+    'custom_option_pagination_page_number' => 'Page Number + Limit',
+    'custom_option_pagination_next_url' => 'Next URL in response',
+
+    // ABM extras. AxM is the common shorthand for Apple School
+    // Manager (ASM) and Apple Business Manager (ABM) combined, kept
+    // short so a table row full of these fields doesn't wrap. Only
+    // ABM-only fields use this prefix; extras that are shared with
+    // other adapters (extra_model_marketing_name is used by Fleet
+    // too) keep the :vendor-templated shape above.
+    'abm_extra_product_family' => 'AxM Product Family',
+    'abm_extra_model_marketing_name' => 'AxM Model Marketing Name',
+    'abm_extra_product_type' => 'AxM Product Type',
+    'abm_extra_part_number' => 'AxM Part Number',
+    'abm_extra_color' => 'AxM Color',
+    'abm_extra_order_number' => 'AxM Order Number',
+    'abm_extra_order_date' => 'AxM Order Date',
+    'abm_extra_purchase_source_type' => 'AxM Purchase Source Type',
+    'abm_extra_purchase_source_id' => 'AxM Purchase Source ID',
+    'abm_extra_mdm_server' => 'AxM MDM Server',
 ];
