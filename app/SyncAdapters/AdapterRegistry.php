@@ -5,6 +5,7 @@ namespace App\SyncAdapters;
 use App\Models\SyncAdapterInstance;
 use App\SyncAdapters\Addigy\AddigyAdapter;
 use App\SyncAdapters\AppleBusinessManager\AppleBusinessManagerAdapter;
+use App\SyncAdapters\CustomHttp\CustomHttpAdapter;
 use App\SyncAdapters\Fleet\FleetAdapter;
 use App\SyncAdapters\Intune\IntuneAdapter;
 use App\SyncAdapters\Jamf\JamfAdapter;
@@ -39,6 +40,7 @@ class AdapterRegistry
         'fleet' => FleetAdapter::class,
         'addigy' => AddigyAdapter::class,
         'abm' => AppleBusinessManagerAdapter::class,
+        'custom_http' => CustomHttpAdapter::class,
         'intune' => IntuneAdapter::class,
         'jamf' => JamfAdapter::class,
         'jamf_school' => JamfSchoolAdapter::class,

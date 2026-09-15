@@ -466,7 +466,22 @@ class SyncHostFromAdapter
         $asset->status_id = self::resolveStatusId($instance);
         $asset->asset_tag = self::resolveAssetTag($record, $instance);
         $asset->company_id = self::resolveCompanyId($record, $instance);
-        $asset->save();
+        // Asset uses ValidatingTrait, so save() returns false on
+        // validation failure without throwing. Without this guard the
+        // caller then wrote asset_external_sources with asset_id=null
+        // and only surfaced the FK violation, hiding the real cause
+        // (e.g. model_id is null because the adapter's model mapping
+        // points at a field the vendor didn't return, or asset_tag
+        // collided with an existing row). Raise the validation errors
+        // so the sync loop's catch block logs the actionable message.
+        if (! $asset->save()) {
+            throw new RuntimeException(sprintf(
+                'could not save asset for %s record %s: %s',
+                $record->sourceKey,
+                $record->sourceId,
+                implode('; ', $asset->getErrors()->all()) ?: 'unknown validation failure',
+            ));
+        }
 
         return $asset;
     }
@@ -569,6 +584,20 @@ class SyncHostFromAdapter
      * {model} {source}. Extras (e.g. {extra.kandji_asset_tag}) can be
      * added later without touching callers.
      */
+    /**
+     * Recognized placeholder tokens for asset_tag_pattern. Kept as a
+     * public constant so the validation rule (AssetTagPatternRule)
+     * can reference the same list without drifting from the
+     * substitution logic below.
+     */
+    public const ASSET_TAG_PATTERN_PLACEHOLDERS = [
+        '{serial}',
+        '{external_id}',
+        '{hostname}',
+        '{model}',
+        '{source}',
+    ];
+
     private static function renderAssetTagPattern(string $pattern, HostInventoryRecord $record): ?string
     {
         $substitutions = [

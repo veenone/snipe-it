@@ -923,7 +923,7 @@ class SettingsController extends Controller
                 ->with('error', trans('admin/settings/sync_adapters.not_found', ['slug' => $requestedSlug]));
         }
 
-        return view('settings.adapters.index', compact(
+        return view('settings.adapters', compact(
             'adapters', 'adapterTypes', 'selected', 'companies', 'hasCompanies', 'selectedCompany',
         ));
     }
