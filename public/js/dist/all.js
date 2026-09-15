@@ -75334,6 +75334,89 @@ $(function () {
     });
   });
 
+  /*
+   * Generic dirty-form guard.
+   *
+   * Any <form data-dirty-guard id="my-form"> is watched for changes.
+   * Any element (usually a button) elsewhere on the page carrying
+   * data-dirty-guarded-by="my-form" gets disabled while the form is
+   * dirty and re-enabled when the values revert to the initial
+   * snapshot. Useful anywhere the page has an "act on saved state"
+   * control that would silently run against the OLD state if
+   * clicked with pending edits (sync-adapter Pull/Push Now, an
+   * "Impersonate" button next to permission edits, etc).
+   *
+   * Attributes:
+   *   - data-dirty-guard              (form) opt-in marker
+   *   - data-dirty-guard-warning      (form, optional) tooltip text
+   *                                   set on guarded buttons when
+   *                                   they are disabled by this
+   *                                   guard. Defaults to a generic
+   *                                   "Save your changes first"
+   *                                   English fallback so a caller
+   *                                   that forgets to localize still
+   *                                   gets a usable hint.
+   *   - data-dirty-guarded-by="{id}"  (button/element) declares
+   *                                   which form it's guarded by,
+   *                                   matched against the form's id.
+   *
+   * The guard only touches buttons that were enabled server-side.
+   * A data-dirty-guard-disabled marker on the button records OUR
+   * override so a revert re-enables only what we disabled, leaving
+   * server-side `disabled` attributes intact.
+   */
+  document.querySelectorAll('form[data-dirty-guard]').forEach(function (form) {
+    var formId = form.id;
+    if (!formId) return;
+    var warning = form.getAttribute('data-dirty-guard-warning') || 'Save your changes first.';
+    function findGuardedElements() {
+      return document.querySelectorAll('[data-dirty-guarded-by="' + formId + '"]');
+    }
+    function serialize() {
+      // FormData enumerates named inputs as they currently sit,
+      // so this catches select changes, textarea edits, and any
+      // input-event that fires. Sort by key for stability across
+      // browsers that iterate FormData in insertion order vs
+      // document order.
+      var entries = [];
+      new FormData(form).forEach(function (v, k) {
+        entries.push(k + '\0' + v);
+      });
+      entries.sort();
+      return entries.join('\n');
+    }
+    // Defer the initial snapshot to next tick so any init-time
+    // form mutations (select2 syncing hidden values, custom
+    // widgets, dynamic show/hide picking initial visibility) have
+    // settled before we lock in the baseline.
+    var initialState = null;
+    setTimeout(function () {
+      initialState = serialize();
+    }, 0);
+    var currentlyDirty = false;
+    function reevaluate() {
+      if (initialState === null) return;
+      var nowDirty = serialize() !== initialState;
+      if (nowDirty === currentlyDirty) return;
+      currentlyDirty = nowDirty;
+      findGuardedElements().forEach(function (el) {
+        if (nowDirty) {
+          if (!el.disabled) {
+            el.disabled = true;
+            el.setAttribute('data-dirty-guard-disabled', '1');
+            el.setAttribute('title', warning);
+          }
+        } else if (el.getAttribute('data-dirty-guard-disabled') === '1') {
+          el.disabled = false;
+          el.removeAttribute('data-dirty-guard-disabled');
+          el.removeAttribute('title');
+        }
+      });
+    }
+    form.addEventListener('input', reevaluate);
+    form.addEventListener('change', reevaluate);
+  });
+
   // Same story for viewport resizes: bootstrap-table caches column
   // widths from the initial layout and doesn't recompute when the
   // window width changes. Debounce so a drag-resize doesn't fire
