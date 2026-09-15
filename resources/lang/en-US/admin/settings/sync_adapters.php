@@ -1,19 +1,6 @@
 <?php
 
 return [
-    /*
-    |--------------------------------------------------------------------------
-    | Sync Adapter Strings
-    |--------------------------------------------------------------------------
-    |
-    | Every UI-facing string for the sync-adapter framework, grouped into
-    | sections. Placeholder tokens like :vendor, :type, :label, :count,
-    | :summary, :pull_command, and :push_command let translators localize
-    | each shape once no matter which adapter renders it.
-    |
-    */
-
-    // Framework labels and messages
     'title' => 'Sync Adapters',
     'help' => 'Sync host inventory from external systems into Snipe-IT.',
     'none_registered' => 'No sync adapters are registered in this installation.',
@@ -38,7 +25,6 @@ return [
     'instance_deleted' => 'Adapter removed. Previously synced assets stay in place with their existing external-id links.',
     'builtin_undeletable' => 'Built-in adapters cannot be deleted. Deactivate it instead.',
 
-    // Add / edit / delete instance
     'add_button' => 'Add adapter',
     'add_modal_title' => 'Add sync adapter',
     'add_type_label' => 'Adapter type',
@@ -51,8 +37,7 @@ return [
     'company_filter_label' => 'Filter by company',
     'company_filter_all' => 'All companies',
     'company_filter_shared' => 'Shared (no company)',
-
-    // Readiness + direction states
+    
     'readiness_active' => 'Active, configured and will sync',
     'readiness_partial' => 'Turned on but the configuration is incomplete',
     'readiness_inactive' => 'Turned off',
@@ -136,7 +121,7 @@ return [
 
     // Group scoping
     'group_mapping_title' => ':label to Snipe-IT company mapping',
-    'group_mapping_intro' => 'Map each :label from the vendor to a Snipe-IT company. Synced devices land in the mapped company. Unmapped groups fall back to this adapter\'s own company setting. Click Refresh to pull the current list from the vendor.',
+    'group_mapping_intro' => 'Map each :label from the vendor to a Snipe-IT company. Synced devices are added in the mapped company. Unmapped groups fall back to this adapter\'s own company setting. Click Refresh to pull the current list from the vendor.',
     'group_mapping_empty' => 'No :label list loaded yet. Click Refresh to fetch the current list from the vendor.',
     'refresh_groups' => 'Refresh :label list',
     'refresh_groups_ok' => 'Refreshed :count :label(s) from the vendor.',
@@ -203,20 +188,18 @@ return [
     'custom_pagination_page_start_help' => 'The number to use for the first page. Defaults to <code>1</code>. Set to <code>0</code> for APIs that number pages from zero.',
     'custom_pagination_next_path_help' => 'Dot-path into the response body pointing at the absolute URL of the next page, e.g. <code>links.next</code> or <code>meta.next_page_url</code>. When the path resolves to blank or missing, pagination stops.',
     'custom_field_paths_label' => 'Vendor Response Paths',
-    'custom_field_paths_help' => 'This section tells the adapter WHERE to find each field in your vendor\'s JSON response. Pick a Snipe-IT field, type the dot-path where your API returns that value in one record (e.g. <code>hardware.serial</code>), then click Add. Which Snipe-IT column each field lands in, and whether it flows pull / push / both, is configured in the field-mapping section further down.',
+    'custom_field_paths_help' => 'This section tells the adapter WHERE to find each field in your vendor\'s JSON response. Pick a Snipe-IT field, type the dot-path where your API returns that value in one record (e.g. <code>hardware.serial</code>), then click Add. Which Snipe-IT column each value is synces to, and whether it flows pull / push / both, is configured in the field-mapping section further down.',
     'field_map_column_field' => 'Snipe-IT Field',
     'field_map_column_path' => 'Vendor Dot-Path',
     'field_map_empty' => 'No fields mapped yet.',
     'field_map_pick_field' => 'Pick a field',
     'field_map_new_path' => 'Dot-path (e.g. hardware.serial)',
-    'custom_extras_definition_help' => 'Optional. JSON array declaring additional vendor fields you want available in the mapping table below. Shape: <code>[{"key": "vendor_field", "label": "Human Label", "path": "dot.path.to.value"}]</code>. Each entry appears in the extras list where you can route it to a custom field or a native column.',
+    'custom_extras_definition_help' => 'Optional. JSON array declaring additional vendor fields you want available in the mapping table below. Format: <code>[{"key": "vendor_field", "label": "Human Label", "path": "dot.path.to.value"}]</code>. Each entry appears in the extras list where you can route it to a custom field or a native column.',
     'custom_push_method_help' => 'HTTP method the adapter uses when pushing updates back to your API. Defaults to <code>PATCH</code>.',
     'custom_push_path_help' => 'Path appended to the Base URL when pushing. Supports the <code>{external_id}</code> placeholder, which is replaced with the vendor-side device id recorded during the last pull for each asset. Leave blank to hit the Base URL directly (useful when your API accepts the id in the request body instead of the URL). To disable push entirely, set Push HTTP Method to <code>Disabled</code>.',
-    'custom_push_notes_target_help' => 'Optional. Dot-path in the outgoing payload where the composed Push Notes template value should land, e.g. <code>metadata.notes</code>. Leave blank if you are not using composed notes.',
+    'custom_push_notes_target_help' => 'Optional. Dot-path in the outgoing payload where the composed Push Notes template value should be synced to, e.g. <code>metadata.notes</code>. Leave blank if you are not using composed notes.',
 
-    // Section headings for the CustomHttpAdapter settings page. Sections
-    // group the credential-schema entries into labeled fieldsets so admins
-    // can find auth / pull / pagination / push clusters at a glance.
+    // Section headings for the CustomHttpAdapter settings page.
     'custom_section_auth_title' => 'Authentication',
     'custom_section_auth_help' => 'How the adapter identifies itself to your API.',
     'custom_section_pull_title' => 'Pull Endpoint',
@@ -375,12 +358,7 @@ return [
     'custom_option_pagination_page_number' => 'Page Number + Limit',
     'custom_option_pagination_next_url' => 'Next URL in response',
 
-    // ABM extras. AxM is the common shorthand for Apple School
-    // Manager (ASM) and Apple Business Manager (ABM) combined, kept
-    // short so a table row full of these fields doesn't wrap. Only
-    // ABM-only fields use this prefix; extras that are shared with
-    // other adapters (extra_model_marketing_name is used by Fleet
-    // too) keep the :vendor-templated shape above.
+    // ABM extras.
     'abm_extra_product_family' => 'AxM Product Family',
     'abm_extra_model_marketing_name' => 'AxM Model Marketing Name',
     'abm_extra_product_type' => 'AxM Product Type',
