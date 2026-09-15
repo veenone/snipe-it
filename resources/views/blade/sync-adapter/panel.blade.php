@@ -30,40 +30,51 @@
             <form
                 method="POST"
                 action="{{ route('settings.adapters.sync', $slug) }}"
+                class="js-sync-action-form"
                 style="display: inline;"
             >
                 @csrf
                 <button
                     type="submit"
-                    class="btn btn-primary"
+                    class="btn btn-primary js-sync-action-button"
+                    data-dirty-guarded-by="adapter-form-{{ $slug }}"
                     @disabled(! $canSync)
                 >
-                    <i class="fa-solid fa-cloud-arrow-down" aria-hidden="true"></i>
-                    {{ trans('admin/settings/sync_adapters.pull_now') }}
+                    <i class="fa-solid fa-cloud-arrow-down js-sync-action-icon" aria-hidden="true"></i>
+                    <span class="js-sync-action-label">{{ trans('admin/settings/sync_adapters.pull_now') }}</span>
                 </button>
             </form>
 
-            {{-- Push Now button only renders for adapters that implement
-                 PushableAdapter. Same sibling-form pattern as Pull Now
-                 above. Pushes every asset already linked to this
-                 instance via asset_external_sources. --}}
-            @if ($adapter instanceof \App\SyncAdapters\PushableAdapter)
+            {{-- Push Now button renders for adapters that implement
+                 PushableAdapter AND report canPush() true at runtime
+                 (Fleet Free returns false because its label writes are
+                 Premium-only. CustomHttpAdapter returns false when the
+                 admin hasn't set a push endpoint yet). --}}
+            @if ($adapter instanceof \App\SyncAdapters\PushableAdapter && $adapter->canPush())
                 <form
                     method="POST"
                     action="{{ route('settings.adapters.push', $slug) }}"
+                    class="js-sync-action-form"
                     style="display: inline; margin-left: 8px;"
                 >
                     @csrf
                     <button
                         type="submit"
-                        class="btn btn-default"
+                        class="btn btn-default js-sync-action-button"
+                        data-dirty-guarded-by="adapter-form-{{ $slug }}"
                         @disabled(! $canSync)
                     >
-                        <i class="fa-solid fa-cloud-arrow-up" aria-hidden="true"></i>
-                        {{ trans('admin/settings/sync_adapters.push_now') }}
+                        <i class="fa-solid fa-cloud-arrow-up js-sync-action-icon" aria-hidden="true"></i>
+                        <span class="js-sync-action-label">{{ trans('admin/settings/sync_adapters.push_now') }}</span>
                     </button>
                 </form>
             @endif
+
+            {{-- The submit handler that swaps the icon for a spinner
+                 and disables sibling sync-action buttons lives in
+                 resources/assets/js/snipeit.js. Fully driven by the
+                 .js-sync-action-form / .js-sync-action-button classes
+                 above so nothing on this partial needs inline JS. --}}
 
             <p class="help-block" style="margin-top: 10px;">
                 {{-- Show both commands when this adapter supports push

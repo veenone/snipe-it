@@ -1,10 +1,10 @@
 {{-- Shared form frame for a sync-adapter settings tab. The
-     adapter_credentials partial drops its schema-driven credential
-     inputs into the default slot. The URL row, active/heartbeat
-     toggles, and mapping fieldset stay here because they're identical
-     across every adapter regardless of credential shape.
+     credentials partial drops its schema-driven credential inputs
+     into the default slot. The URL row, active/heartbeat toggles,
+     and mapping fieldset stay here because they're identical across
+     every adapter regardless of credential shape.
 
-     Called from resources/views/settings/adapters/adapter_credentials.blade.php
+     Called from resources/views/blade/sync-adapter/credentials.blade.php
      which passes the hydrated adapter through the `adapter` prop
      and puts the credential inputs in the default slot. --}}
 @props(['adapter'])
@@ -20,6 +20,9 @@
     :route="route('settings.adapters.save', $slug)"
     data-sync-url="{{ route('settings.adapters.sync', $slug) }}"
     data-enabled="{{ $adapter->isEnabled() ? '1' : '0' }}"
+    data-adapter-slug="{{ $slug }}"
+    data-dirty-guard
+    data-dirty-guard-warning="{{ trans('admin/settings/sync_adapters.unsaved_changes_before_sync') }}"
 >
     <x-demo-callout/>
 
@@ -48,7 +51,6 @@
         :name="$activeField"
         :checked="$adapter->isActive()"
         :label="trans('admin/settings/sync_adapters.active_label')"
-        :help_text="trans('admin/settings/sync_adapters.active_help')"
         :disabled="$locked"
     />
 
@@ -61,29 +63,64 @@
     />
 
     @if ($adapter->usesConfigurableUrl())
-        <x-form.row
-            :label="trans('admin/settings/sync_adapters.base_url')"
-            :name="$urlField"
-            input_div_class="col-md-8"
-            :help_text="trans('admin/settings/sync_adapters.base_url_help', ['type' => $adapter::typeLabel()])"
-            required
-        >
-            <x-slot:input>
-                <x-input.text
-                    type="url"
-                    :name="$urlField"
-                    :value="old($urlField, $adapter->getUrl())"
-                    :disabled="$locked"
-                    :placeholder="$adapter->baseUrlPlaceholder()"
-                    input_icon="link"
-                    input_group_addon="right"
-                    required
-                />
-            </x-slot:input>
-        </x-form.row>
+        @php
+            // Optional: adapters can pull the Base URL row into a
+            // settingsSections() group so it renders inside the
+            // relevant fieldset (typically "auth"). The credentials
+            // partial's schema loop tracks currentSection starting
+            // at this value and won't re-open the fieldset for its
+            // first same-sectioned schema entries.
+            $urlSection = $adapter->baseUrlSection();
+            $urlSectionData = $urlSection
+                ? ($adapter->settingsSections()[$urlSection] ?? null)
+                : null;
+        @endphp
+        @if ($urlSectionData)
+            <fieldset>
+                <x-form.legend icon="tip" help_text="{!! $urlSectionData['help'] ?? '' !!}">
+                    {{ $urlSectionData['title'] }}
+                </x-form.legend>
+        @endif
+            <x-form.row
+                :label="trans('admin/settings/sync_adapters.base_url')"
+                :name="$urlField"
+                input_div_class="col-md-8"
+                :help_text="trans('admin/settings/sync_adapters.base_url_help', ['type' => $adapter::typeLabel()])"
+                required
+            >
+                <x-slot:input>
+                    <x-input.text
+                        type="url"
+                        :name="$urlField"
+                        :value="old($urlField, $adapter->getUrl())"
+                        :disabled="$locked"
+                        :placeholder="$adapter->baseUrlPlaceholder()"
+                        input_icon="link"
+                        input_group_addon="right"
+                        required
+                    />
+                </x-slot:input>
+            </x-form.row>
+        {{-- We deliberately do NOT close the fieldset here even when
+             we opened one above. The credentials partial's schema
+             loop starts with $currentSection = $urlSection, so its
+             first section transition (to any section other than
+             $urlSection) closes this fieldset. --}}
     @endif
 
     {{ $slot }}
+
+    {{-- Everything from Model Category down through "Check assets
+         in when the vendor reports no assigned user" is grouped in a
+         single fieldset so it visually separates from whatever the
+         previous section left open (on the Custom HTTP adapter the
+         "Custom Extras" section sits directly above this block, and
+         without the wrapper these controls read as if they were part
+         of Custom Extras). Applies to every adapter for consistency. --}}
+    <fieldset>
+        <x-form.legend icon="tip" help_text="{{ trans('admin/settings/sync_adapters.defaults_section_intro') }}">
+            {{ trans('admin/settings/sync_adapters.defaults_section_title') }}
+        </x-form.legend>
 
     {{-- Default category for AssetModels auto-created from this
          adapter. Vendors don't send Snipe-IT's category concept but
@@ -91,7 +128,7 @@
     <x-input.category-select
         :name="$slug . '_default_category_id'"
         :label="trans('admin/settings/sync_adapters.default_category')"
-        :selected="$adapter->defaultCategoryId()"
+        :selected="old($slug . '_default_category_id', $adapter->defaultCategoryId())"
         categoryType="asset"
         :help_text="trans('admin/settings/sync_adapters.default_category_help')"
         required
@@ -113,7 +150,7 @@
                 :name="$slug . '_default_status_id'"
                 :id="$slug . '_default_status_id'"
                 :options="\App\Models\Statuslabel::orderBy('name')->pluck('name', 'id')->all()"
-                :selected="$adapter->defaultStatusId()"
+                :selected="old($slug . '_default_status_id', $adapter->defaultStatusId())"
                 :includeEmpty="true"
                 style="width: 100%"
                 :disabled="$locked"
@@ -167,6 +204,12 @@
                  this page, but the option pool is a fixed 3-value enum
                  so the built-in search box is hidden via
                  data-minimum-results-for-search. --}}
+            @php
+                // On a validation-error redisplay, old() carries the submitted
+                // value so the admin does not have to re-pick. Falls back to
+                // the stored value on the first render.
+                $userMatchSelected = old($slug.'_user_match_strategy', $adapter->userMatchStrategy());
+            @endphp
             <select
                 name="{{ $slug }}_user_match_strategy"
                 class="select2 form-control"
@@ -180,7 +223,7 @@
                     'username' => trans('admin/settings/sync_adapters.user_match_username'),
                     'email' => trans('admin/settings/sync_adapters.user_match_email'),
                 ] as $value => $label)
-                    <option value="{{ $value }}" @selected($adapter->userMatchStrategy() === $value)>{{ $label }}</option>
+                    <option value="{{ $value }}" @selected($userMatchSelected === $value)>{{ $label }}</option>
                 @endforeach
             </select>
         </x-slot:input>
@@ -208,6 +251,41 @@
         :help_text="trans('admin/settings/sync_adapters.checkin_on_null_user_help')"
         :disabled="$locked"
     />
+    </fieldset>
+
+    {{-- Any type: field_map entries from the adapter's credential
+         schema render here in their own fieldset. Keeps them
+         grouped alongside the standard mapping controls below and
+         out of the credential-input section above, since they
+         define WHERE fields live in the vendor payload rather than
+         auth credentials. --}}
+    @foreach ($adapter->settingsSchema() as $fmField)
+        @if (($fmField['type'] ?? '') === 'field_map')
+            @php
+                $fmName = $slug.'_'.$fmField['key'];
+                $fmStored = $adapter->credentialForDisplay($fmField['key']);
+                $fmMap = is_string($fmStored) && $fmStored !== ''
+                    ? (json_decode($fmStored, true) ?: [])
+                    : [];
+                $fmMap = old($fmName, is_array($fmMap) ? $fmMap : []);
+                $fmMap = is_array($fmMap) ? $fmMap : [];
+            @endphp
+            <fieldset>
+                <x-form.legend icon="tip" help_text="{!! $fmField['help'] ?? '' !!}">
+                    {{ $fmField['label'] }}
+                </x-form.legend>
+                <div class="form-group">
+                    <div class="col-md-8 col-md-offset-3">
+                        <x-input.field-map
+                            :name="$fmName"
+                            :options="$fmField['options'] ?? []"
+                            :stored="$fmMap"
+                        />
+                    </div>
+                </div>
+            </fieldset>
+        @endif
+    @endforeach
 
     {{-- Push dry-run only shows for adapters that actually support
          push. Turning it on makes push() log the payload instead of
@@ -356,13 +434,44 @@
                     input_div_class="col-md-8"
                 >
                     <x-slot:input>
-                        <x-input.select
-                            :name="$slug . '_mapping[' . $extraKey . ']'"
-                            :options="\App\SyncAdapters\Support\MappingTargets::optionsForExtra($extraType, $extraAdminDefined)"
-                            :selected="$adapter->mappingFor($extraKey)"
-                            style="width: 100%"
-                            :disabled="$locked"
-                        />
+                        @if ($supportsPush)
+                            {{-- Same two-column shape as the standard
+                                 fields above so admins can pick a
+                                 target column AND a direction per
+                                 extra. Framework already respects
+                                 directionFor() on extras via
+                                 pushDirectedFields(), but the UI was
+                                 only exposing the target dropdown. --}}
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <x-input.select
+                                        :name="$slug . '_mapping[' . $extraKey . ']'"
+                                        :options="\App\SyncAdapters\Support\MappingTargets::optionsForExtra($extraType, $extraAdminDefined)"
+                                        :selected="$adapter->mappingFor($extraKey)"
+                                        style="width: 100%"
+                                        :disabled="$locked"
+                                    />
+                                </div>
+                                <div class="col-md-4">
+                                    <x-input.select
+                                        :name="$slug . '_direction[' . $extraKey . ']'"
+                                        :options="$directionOptions"
+                                        :selected="$adapter->directionFor($extraKey)"
+                                        style="width: 100%"
+                                        data-minimum-results-for-search="Infinity"
+                                        :disabled="$locked"
+                                    />
+                                </div>
+                            </div>
+                        @else
+                            <x-input.select
+                                :name="$slug . '_mapping[' . $extraKey . ']'"
+                                :options="\App\SyncAdapters\Support\MappingTargets::optionsForExtra($extraType, $extraAdminDefined)"
+                                :selected="$adapter->mappingFor($extraKey)"
+                                style="width: 100%"
+                                :disabled="$locked"
+                            />
+                        @endif
                     </x-slot:input>
                 </x-form.row>
             @endforeach

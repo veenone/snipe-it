@@ -1,15 +1,13 @@
-{{-- The one settings partial every ConfigurableAdapter uses.
-     Iterates the adapter's credentialSchema() and renders each
+{{-- The settings partial EVERY ConfigurableAdapter uses.
+     Iterates the adapter's settingsSchema() and renders each
      declared field as either plain text or a password (with show/hide
      toggle) based on its `secret` flag. Everything ELSE on the form
      (URL, active toggle, heartbeat toggle, per-field mapping) lives in
      the shared form-shell component.
 
      Field names AND ids are prefixed with the instance slug so each
-     adapter's form has fully unique DOM identifiers. Without the
-     prefix every tab-pane renders the same input id and browsers
-     link them, causing typed values to visually propagate across
-     tabs. --}}
+     adapter's form has fully unique DOM identifiers to avoid
+     entered values to visually propagate across tabs. --}}
 @php
     $slug = $adapter->name();
     $locked = config('app.lock_passwords') === true;
@@ -59,15 +57,68 @@
     </form>
 @endif
 
-<x-sync-adapter-form :adapter="$adapter">
-    @foreach ($adapter->credentialSchema() as $field)
+<x-sync-adapter.form :adapter="$adapter">
+    @php
+        $settingsSections = $adapter->settingsSections();
+        // Track section transitions across the loop so we can open
+        // and close <fieldset> wrappers around each contiguous run
+        // of same-sectioned schema entries. Un-fieldset-sectioned entries
+        // (section => null) render outside any fieldset.
+        //
+        // Starts at baseUrlSection() so if the shell already opened a
+        // fieldset around the Base URL row, the schema loop's first
+        // same-sectioned entries render into that fieldset instead of
+        // opening a duplicate. When the loop transitions to a
+        // different section, the close-then-open handles the switch.
+        $currentSection = $adapter->baseUrlSection();
+    @endphp
+    @foreach ($adapter->settingsSchema() as $field)
         @php
             $fieldName = $slug.'_'.$field['key'];
             $fieldType = $field['type'] ?? 'text';
             $isSecret = $field['secret'] ?? false;
             $isRequired = $field['required'] ?? true;
             $storedValue = $adapter->credentialForDisplay($field['key']);
+            // Optional conditional visibility. Schema entries declare
+            // visible_when: [source_key => value | [values]] and the
+            // rendered field gets wrapped in a data-driven div. Inline
+            // JS below the loop wires the show/hide logic.
+            $visibleWhen = $field['visible_when'] ?? null;
+            $section = $field['section'] ?? null;
         @endphp
+        @if ($section !== $currentSection)
+            @if ($currentSection !== null)
+                </fieldset>
+    @endif
+    @if ($section !== null && isset($settingsSections[$section]))
+        @php
+            // Hoist the section-help lookup out of the Blade attribute
+            // to sidestep an operator-precedence trap: inside a
+            // `help_text="{!! ... !!}"` string attribute Blade compiles
+            // the `??` fallback as `'' . $arr['help'] ?? ''`, and the
+            // outer concat binds tighter than `??`, so PHP evaluates
+            // $arr['help'] unconditionally and warns on missing keys.
+            // Regular PHP `??` on its own line does the right thing.
+            $sectionHelp = $settingsSections[$section]['help'] ?? '';
+        @endphp
+        <fieldset>
+            <x-form.legend icon="tip" help_text="{!! $sectionHelp !!}">
+                {{ $settingsSections[$section]['title'] }}
+            </x-form.legend>
+            @endif
+            @php $currentSection = $section; @endphp
+            @endif
+            @if (is_array($visibleWhen))
+                @php
+                    $depKey = array_key_first($visibleWhen);
+                    $depValues = (array) $visibleWhen[$depKey];
+                @endphp
+                <div
+                    class="adapter-conditional-field"
+                    data-visible-when-field="{{ $slug.'_'.$depKey }}"
+                    data-visible-when-value="{{ implode(',', $depValues) }}"
+                >
+                    @endif
         @if ($fieldType === 'checkbox')
             <x-form.checkbox-row
                 :name="$fieldName"
@@ -89,12 +140,18 @@
                 :help_text="$field['help'] ?? null"
                 hideNewButton
             />
+                    @elseif ($fieldType === 'field_map')
+                        {{-- field_map entries are rendered by the shell's own
+                             fieldset below the operational checkboxes, so they
+                             sit alongside the standard mapping controls instead
+                             of getting lost among the credential inputs. Nothing
+                             to render here. --}}
         @else
             <x-form.row
                 :label="$field['label']"
                 :name="$fieldName"
                 input_div_class="col-md-8"
-                :help_text="$field['help'] ?? null"
+                help_html="{!! $field['help'] ?? '' !!}"
                 :required="$isRequired"
             >
                 <x-slot:input>
@@ -149,6 +206,27 @@
                             :required="$isRequired"
                             ignoreAutofill
                         />
+                    @elseif (! empty($field['url_prefix']))
+                        {{-- Input-group that shows the current Base URL
+                             as a prefix addon so admins see the full
+                             URL that will be assembled at request
+                             time. Marker class on the addon lets the
+                             live-update JS at the bottom of this
+                             partial sync new Base URL keystrokes into
+                             this label without a page reload. --}}
+                        <div class="input-group">
+                            <span
+                                class="input-group-addon js-adapter-url-prefix"
+                                data-adapter-slug="{{ $slug }}"
+                                data-placeholder="{{ trans('admin/settings/sync_adapters.custom_url_prefix_base_url_placeholder') }}"
+                            >{{ $adapter->getUrl() ?: trans('admin/settings/sync_adapters.custom_url_prefix_base_url_placeholder') }}</span>
+                            <x-input.text
+                                :name="$fieldName"
+                                :value="old($fieldName, $storedValue)"
+                                :required="$isRequired"
+                                :placeholder="$field['placeholder'] ?? null"
+                            />
+                        </div>
                     @else
                         <x-input.text
                             :name="$fieldName"
@@ -158,8 +236,20 @@
                     @endif
                 </x-slot:input>
             </x-form.row>
+                    @endif
+                    @if (is_array($visibleWhen))
+                </div>
         @endif
     @endforeach
-</x-sync-adapter-form>
+            @if ($currentSection !== null)
+                {{-- Close the last section's fieldset when the schema loop exits inside one. --}}
+        </fieldset>
+    @endif
+</x-sync-adapter.form>
 
-<x-sync-adapter-panel :adapter="$adapter" />
+<x-sync-adapter.panel :adapter="$adapter" />
+
+{{-- JS handlers for [data-visible-when-field] conditional-visibility
+     and .js-adapter-url-prefix live-update live in
+     resources/assets/js/snipeit.js. Both are data-attribute driven
+     so nothing on this partial needs inline script anymore. --}}

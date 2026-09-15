@@ -12,7 +12,7 @@
         <x-box>
             <x-slot:header>
                 <i class="fa-solid fa-network-wired" aria-hidden="true"></i>
-                {{ trans('admin/settings/sync_adapters.title') }}
+                {{ trans('admin/settings/sync_adapters.title') }} <span class="label label-warning">beta</span>
             </x-slot:header>
 
             {{-- Company filter. Reloads the page with ?company=blah so only
@@ -92,7 +92,7 @@
                                 id="adapter-pane-{{ $adapter->name() }}"
                                 @class(['tab-pane fade', 'active in' => $selected?->name() === $adapter->name()])
                             >
-                                @include($adapter->settingsView(), ['adapter' => $adapter])
+                                <x-sync-adapter.credentials :adapter="$adapter" />
                             </div>
                         @endforeach
                     </div>
