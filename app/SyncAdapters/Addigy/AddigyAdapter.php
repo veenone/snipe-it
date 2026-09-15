@@ -57,7 +57,7 @@ class AddigyAdapter extends ConfigurableAdapter
 
     public function vendorGroupLabel(): string
     {
-        return 'Addigy Policy';
+        return trans('admin/settings/sync_adapters.vendor_group_addigy_policy');
     }
 
     public function fetchGroups(): array
