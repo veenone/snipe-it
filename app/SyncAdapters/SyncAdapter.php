@@ -94,7 +94,7 @@ abstract class SyncAdapter
      * Returns null when the instance's adapter_type doesn't match any
      * discovered class (e.g. an old row for a removed adapter).
      */
-    public static function factory(SyncAdapterInstance $instance): ?static
+    public static function factory(SyncAdapterInstance $instance): ?self
     {
         $types = self::allTypes();
         $class = $types[$instance->adapter_type] ?? null;
