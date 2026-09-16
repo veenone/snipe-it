@@ -11,8 +11,6 @@ use App\Models\Statuslabel;
 use App\Models\SyncAdapterConfig;
 use App\Models\SyncAdapterInstance;
 use App\Models\User;
-use App\SyncAdapters\SyncAdapter;
-use App\SyncAdapters\MappingTargets;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use RuntimeException;
@@ -708,6 +706,16 @@ class SyncHostFromAdapter
                 // back to the instance-wide default_category_id.
                 if ($value !== null && $value !== '') {
                     $asset->model_id = self::resolveModelIdByName((string) $value, $instance, $record);
+                }
+                break;
+            case 'byod':
+                // Boolean extras arrive here stringified to '1' or '0'
+                // by stringifyExtra(). Convert back to the model's
+                // boolean shape so the column stores the right type.
+                // Empty string means the vendor didn't send a value on
+                // this sync cycle, so skip rather than false-blank.
+                if ($value !== null && $value !== '') {
+                    $asset->byod = ($value === '1');
                 }
                 break;
         }

@@ -90,7 +90,7 @@ class SyncAdapterDeleteTest extends TestCase
         );
         // Help pane is present and rendered active.
         $this->assertMatchesRegularExpression(
-            '/id="adapter-pane-_help"[^>]*class="[^"]*active in/',
+            '/id="adapter-pane-help"[^>]*class="[^"]*active in/',
             $html,
         );
         // The type catalog surfaces at least one shipped adapter so
@@ -113,7 +113,7 @@ class SyncAdapterDeleteTest extends TestCase
             ->assertOk()
             ->getContent();
 
-        $this->assertStringContainsString('id="adapter-pane-_help"', $html);
+        $this->assertStringContainsString('id="adapter-pane-help"', $html);
         $this->assertStringContainsString(
             trans('admin/settings/sync_adapters.help_tab_label'),
             $html,

@@ -154,6 +154,14 @@ class MappingTargets
             }
         }
 
+        // Boolean-typed extras only have one native column that matches
+        // (assets.byod). Admin-defined boolean extras stay custom-only
+        // because arbitrary tenant-labeled toggles don't have a
+        // universal semantic mapping to native columns.
+        if ($type === 'boolean' && ! $adminDefined) {
+            $options['native:byod'] = trans('admin/settings/sync_adapters.target_native_byod');
+        }
+
         $customFields = match ($type) {
             'boolean' => self::checkboxCustomFields(),
             default => self::textLikeCustomFields(),
