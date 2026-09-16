@@ -149,6 +149,13 @@ document.addEventListener('DOMContentLoaded', function () {
             .replace(/"/g, '&quot;');
     }
 
+    // Check for dirty when vendor mapped fields change. This is needed because the
+    // field-map widget is not a form input itself, but it does change the
+    // values of inputs inside it.
+    function notifyFormOfStructuralChange() {
+        $widget[0].dispatchEvent(new Event('input', {bubbles: true}));
+    }
+
     $addBtn.on('click', function () {
         var key = $picker.val();
         if (!key) { return; }
@@ -166,6 +173,7 @@ document.addEventListener('DOMContentLoaded', function () {
         $picker.val('').trigger('change'); // trigger('change') refreshes the select2 display after the option was pulled
         $newValue.val('');
         refreshEmptyState();
+        notifyFormOfStructuralChange();
     });
 
     $rows.on('click', '.field-map-remove', function () {
@@ -176,6 +184,7 @@ document.addEventListener('DOMContentLoaded', function () {
         $picker.append($('<option>').val(key).text(label));
         $picker.trigger('change'); // re-render select2 with the restored option
         refreshEmptyState();
+        notifyFormOfStructuralChange();
     });
 
     refreshEmptyState();
