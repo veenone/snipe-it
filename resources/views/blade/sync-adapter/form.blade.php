@@ -14,6 +14,12 @@
     $urlField = $slug.'_url';
     $activeField = $slug.'_active';
     $locked = config('app.lock_passwords') === true;
+    // Memoized per-request via Laravel's Str/once so N adapter tab-panes
+    // don't each fire their own companies-count query. The pickers below
+    // (both the per-instance company scope and the per-vendor-group
+    // mapping picker further down) are pure noise on a single-tenant
+    // install with zero company rows.
+    $hasCompanies = once(fn () => \App\Models\Company::query()->exists());
 @endphp
 <x-form
     :id="'adapter-form-' . $slug"
@@ -46,6 +52,26 @@
             />
         </x-slot:input>
     </x-form.row>
+
+    {{-- Company scope. Set at Add-adapter time in the modal. This row
+         surfaces it in the per-adapter settings so admins can see and
+         change what company the instance is scoped to without having
+         to delete and recreate. Blank means shared across every
+         company (available to all). The id is slug-scoped because
+         every adapter tab-pane renders this same form, and duplicate
+         DOM ids silently break select2's init on all but the first
+         one. Only rendered when at least one company exists, since
+         on a single-tenant install the picker would only ever show
+         "no selection" and confuses more than it helps. --}}
+    @if ($hasCompanies)
+        <x-input.company-select
+            name="company_id"
+            :id="$slug . '_company_id_select'"
+            :label="trans('admin/settings/sync_adapters.company_scope_label')"
+            :selected="old('company_id', $adapter->companyId())"
+            :help_text="trans('admin/settings/sync_adapters.company_scope_help')"
+        />
+    @endif
 
     <x-form.checkbox-row
         :name="$activeField"
@@ -303,7 +329,7 @@
         />
     @endif
 
-    @if ($adapter->supportsGroupScoping() && $adapter->isEnabled())
+    @if ($adapter->supportsGroupScoping() && $adapter->isEnabled() && $hasCompanies)
         @php
             $cachedGroups = $adapter->cachedGroups();
             $groupMappings = $adapter->groupMappings();

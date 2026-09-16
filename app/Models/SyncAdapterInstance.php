@@ -18,11 +18,10 @@ use Illuminate\Support\Str;
  */
 class SyncAdapterInstance extends Model
 {
-    protected $fillable = ['adapter_type', 'label', 'slug', 'active', 'built_in', 'company_id'];
+    protected $fillable = ['adapter_type', 'label', 'slug', 'active', 'company_id'];
 
     protected $casts = [
         'active' => 'boolean',
-        'built_in' => 'boolean',
         'last_synced_at' => 'datetime',
     ];
 

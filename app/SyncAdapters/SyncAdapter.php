@@ -245,14 +245,14 @@ abstract class SyncAdapter
         return $this->instance->label;
     }
 
+    public function companyId(): ?int
+    {
+        return $this->instance->company_id;
+    }
+
     public function isActive(): bool
     {
         return $this->instance->active;
-    }
-
-    public function isBuiltIn(): bool
-    {
-        return $this->instance->built_in;
     }
 
     public function isEnabled(): bool

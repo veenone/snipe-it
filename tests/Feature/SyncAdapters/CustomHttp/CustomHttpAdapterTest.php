@@ -696,7 +696,6 @@ class CustomHttpAdapterTest extends TestCase
             'adapter_type' => 'custom_http',
             'label' => 'Test Custom '.uniqid('', true),
             'active' => true,
-            'built_in' => false,
         ]);
 
         SyncAdapterConfig::put($instance->id, 'url', 'https://vendor.example/api');
