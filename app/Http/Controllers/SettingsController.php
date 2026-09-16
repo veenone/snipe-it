@@ -906,7 +906,7 @@ class SettingsController extends Controller
             ->all();
 
         // Default selection: an explicit ?adapter=slug wins if present.
-        // Otherwise prefer the first enabled adapter
+        // Otherwise prefer the first enabled adapter.
         $requestedSlug = $request->query('adapter');
         if ($requestedSlug !== null) {
             $selectedSlug = $requestedSlug;
@@ -924,8 +924,21 @@ class SettingsController extends Controller
                 ->with('error', trans('admin/settings/sync_adapters.not_found', ['slug' => $requestedSlug]));
         }
 
+        // Per-adapter count of asset_external_sources rows keyed by
+        // source slug. Powers the delete-confirmation message so
+        // admins see how many synced assets they are about to
+        // "orphan" (assets stay, external-source link stays, sync
+        // just stops). One grouped query rather than N per-adapter
+        // COUNTs so the settings page stays cheap for installs with
+        // many configured adapters.
+        $syncedCounts = \App\Models\AssetExternalSource::query()
+            ->selectRaw('source, COUNT(*) as c')
+            ->groupBy('source')
+            ->pluck('c', 'source')
+            ->all();
+
         return view('settings.adapters', compact(
-            'adapters', 'adapterTypes', 'selected', 'companies', 'hasCompanies', 'selectedCompany',
+            'adapters', 'adapterTypes', 'selected', 'companies', 'hasCompanies', 'selectedCompany', 'syncedCounts',
         ));
     }
 
@@ -963,6 +976,56 @@ class SettingsController extends Controller
     }
 
     /**
+     * Clone an existing adapter instance. Creates a new inactive
+     * instance with the same adapter_type as the source and copies
+     * every SyncAdapterConfig row across so the admin lands on a
+     * near-identical setup, ready for a per-clone tweak (typically
+     * a different company_id or a swapped URL / token). The clone
+     * starts inactive so the admin reviews before enabling sync.
+     */
+    public function postCloneAdapterInstance(Request $request, \App\Models\SyncAdapterInstance $instance): RedirectResponse
+    {
+        if (config('app.lock_passwords')) {
+            return redirect()->back()->with('error', trans('general.feature_disabled'));
+        }
+
+        $validated = $request->validate([
+            'label' => 'required|string|max:191|unique:sync_adapter_instances,label',
+            'company_id' => 'nullable|integer|exists:companies,id',
+        ]);
+
+        $clone = new \App\Models\SyncAdapterInstance;
+        $clone->fill([
+            'adapter_type' => $instance->adapter_type,
+            'label' => $validated['label'],
+            'company_id' => $validated['company_id'] ?? null,
+            'active' => false,
+        ]);
+        $clone->created_by = auth()->id();
+        $clone->save();
+
+        // Copy every config row keyed to the source instance into the
+        // new one. Encrypted secrets copy as-is since both rows use
+        // the same APP_KEY. Runtime state (last_synced_at, etc.)
+        // lives on the instance row, not in config, so nothing
+        // survives from the source's operational history.
+        $sourceConfig = \App\Models\SyncAdapterConfig::query()
+            ->where('sync_adapter_instance_id', $instance->id)
+            ->get();
+
+        foreach ($sourceConfig as $row) {
+            \App\Models\SyncAdapterConfig::query()->create([
+                'sync_adapter_instance_id' => $clone->id,
+                'config_key' => $row->config_key,
+                'value' => $row->value,
+            ]);
+        }
+
+        return redirect()->route('settings.adapters.index', ['adapter' => $clone->slug])
+            ->with('success', trans('admin/settings/sync_adapters.instance_cloned', ['label' => $instance->label]));
+    }
+
+    /**
      * Save handler for an instance's own config form. Instance-bound
      * route param resolves the target instance. the shipped adapter
      * class knows how to persist its own fields.
@@ -994,6 +1057,7 @@ class SettingsController extends Controller
                     'max:191',
                     \Illuminate\Validation\Rule::unique('sync_adapter_instances', 'label')->ignore($instance->id),
                 ],
+                'company_id' => ['nullable', 'integer', 'exists:companies,id'],
             ]
         );
 
@@ -1002,6 +1066,11 @@ class SettingsController extends Controller
         // comes through as absent from the request, so default to false.
         $instance->active = $request->boolean($instance->slug.'_active');
         $instance->label = $request->input('label', $instance->label);
+        // Empty string in the company-select posts as '' rather than
+        // absent, so normalise to null for the shared-across-companies
+        // sentinel value.
+        $companyId = $request->input('company_id');
+        $instance->company_id = $companyId === '' ? null : $companyId;
         $instance->save();
 
         $adapter->saveConfig($request);
@@ -1428,18 +1497,11 @@ class SettingsController extends Controller
      * Delete an adapter instance. Config rows go away with it. Existing
      * asset_external_sources rows for this instance's slug are left in
      * place (orphaned) so previously-synced assets keep their history.
-     * Built-in instances (the shipped well-known adapters) cannot be
-     * deleted. Users who don't want to use one leave it deactivated.
      */
     public function deleteAdapterInstance(\App\Models\SyncAdapterInstance $instance): RedirectResponse
     {
         if (config('app.lock_passwords')) {
             return redirect()->back()->with('error', trans('general.feature_disabled'));
-        }
-
-        if ($instance->built_in) {
-            return redirect()->route('settings.adapters.index', ['adapter' => $instance->slug])
-                ->with('error', trans('admin/settings/sync_adapters.builtin_undeletable'));
         }
 
         \App\Models\SyncAdapterConfig::query()
