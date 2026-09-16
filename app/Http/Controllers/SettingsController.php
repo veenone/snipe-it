@@ -1268,8 +1268,8 @@ class SettingsController extends Controller
         $flashType = match (true) {
             $pushed > 0 && $errors === 0 => 'success',
             $pushed > 0 && $errors > 0 => 'warning',
-            $pushed === 0 && $errors > 0 => 'error',
-            $pushed === 0 && $errors === 0 && $skipped > 0 => 'error',
+            $errors > 0 => 'error',
+            $skipped > 0 => 'error',
             default => 'warning',
         };
 
