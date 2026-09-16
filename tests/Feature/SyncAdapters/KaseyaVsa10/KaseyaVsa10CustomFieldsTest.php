@@ -12,7 +12,6 @@ use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
-
 class KaseyaVsa10CustomFieldsTest extends TestCase
 {
     protected function setUp(): void
