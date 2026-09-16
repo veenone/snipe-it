@@ -5,7 +5,7 @@ namespace Tests\Feature\SyncAdapters;
 use App\Models\Asset;
 use App\Models\CustomField;
 use App\Models\Statuslabel;
-use App\SyncAdapters\Support\NotesComposer;
+use App\SyncAdapters\NotesComposer;
 use Tests\TestCase;
 
 /**
