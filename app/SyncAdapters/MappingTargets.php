@@ -13,7 +13,7 @@ use App\Models\CustomField;
  * custom field, or skip).
  *
  * Target encoding is `<type>:<id>` so the value stays compact and
- * self-describing when stored in sync_adapter_settings:
+ * self-describing when stored in the instance config blob:
  *   - skip                      -> don't write this field
  *   - native:name               -> asset.name
  *   - native:serial             -> asset.serial

@@ -1005,22 +1005,13 @@ class SettingsController extends Controller
         $clone->created_by = auth()->id();
         $clone->save();
 
-        // Copy every config row keyed to the source instance into the
-        // new one. Encrypted secrets copy as-is since both rows use
-        // the same APP_KEY. Runtime state (last_synced_at, etc.)
-        // lives on the instance row, not in config, so nothing
-        // survives from the source's operational history.
-        $sourceConfig = \App\Models\SyncAdapterConfig::query()
-            ->where('sync_adapter_instance_id', $instance->id)
-            ->get();
-
-        foreach ($sourceConfig as $row) {
-            \App\Models\SyncAdapterConfig::query()->create([
-                'sync_adapter_instance_id' => $clone->id,
-                'config_key' => $row->config_key,
-                'value' => $row->value,
-            ]);
-        }
+        // Copy the whole config blob to the new instance. Encrypted
+        // secrets copy as-is since both rows use the same APP_KEY.
+        // Runtime state (last_synced_at, etc.) lives on its own
+        // instance columns, not in config, so nothing survives from
+        // the source's operational history.
+        $clone->config = $instance->config;
+        $clone->save();
 
         return redirect()->route('settings.adapters.index', ['adapter' => $clone->slug])
             ->with('success', trans('admin/settings/sync_adapters.instance_cloned', ['label' => $instance->label]));
@@ -1393,7 +1384,7 @@ class SettingsController extends Controller
     /**
      * Refresh the cached list of vendor groups for an adapter
      * instance. Calls the adapter's fetchGroups() and persists the
-     * result to sync_adapter_settings so the settings page can render
+     * result to the instance's config blob so the settings page can render
      * the mapping table without hitting the vendor on every page load.
      *
      * Only meaningful for adapters that opt into supportsGroupScoping().
@@ -1449,7 +1440,7 @@ class SettingsController extends Controller
      * adapter that opts into supportsVendorCustomFields(). Parallel
      * to postAdapterRefreshGroups: hits the vendor's custom-fields
      * listing endpoint, stores the normalized list under
-     * sync_adapter_settings.vendor_custom_fields, and redirects back
+     * the instance's config.vendor_custom_fields key, and redirects back
      * to the adapter settings page with a count.
      */
     public function postAdapterRefreshCustomFields(\App\Models\SyncAdapterInstance $instance): RedirectResponse
@@ -1505,10 +1496,8 @@ class SettingsController extends Controller
             return redirect()->back()->with('error', trans('general.feature_disabled'));
         }
 
-        \App\Models\SyncAdapterConfig::query()
-            ->where('sync_adapter_instance_id', $instance->id)
-            ->delete();
-
+        // Config lives on the instance row as a JSON column, so the
+        // instance delete takes it with it. No separate purge needed.
         $instance->delete();
 
         return redirect()->route('settings.adapters.index')

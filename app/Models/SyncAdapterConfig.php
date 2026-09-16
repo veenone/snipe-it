@@ -2,56 +2,82 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
-
 /**
- * Storage for per-instance sync-adapter configuration. Row-per-
- * (sync_adapter_instance_id, config_key) so every adapter instance
- * carries its own config bag and no future adapter has to touch the
- * schema. Adapters that store secrets (Fleet API tokens, Jamf passwords,
+ * Read/write helper for per-instance sync-adapter configuration.
+ *
+ * Storage is a single JSON blob on the `config` column of
+ * SyncAdapterInstance (prior shape was a separate sync_adapter_settings
+ * table with one row per key, folded into the parent instance row per
+ * review feedback). Adapters call the static methods here to avoid
+ * having to json_decode or track dirty state themselves.
+ *
+ * Value semantics carry over from the old row-per-key design:
+ *   - put(id, key, value) sets a value (including explicit null).
+ *   - get(id, key, default) returns the stored value or the default
+ *     when the key is missing entirely.
+ *   - has(id, key) is true only when the key exists AND its value is
+ *     not null.
+ *   - forget(id, key) removes the key from the blob entirely.
+ *
+ * Adapters that store secrets (Fleet API tokens, Jamf passwords,
  * Intune client secrets, etc.) are responsible for Crypt::encrypt-ing
  * the value before calling put(). This class treats every value as an
- * opaque string.
+ * opaque scalar and stores it verbatim inside the JSON blob.
  */
-class SyncAdapterConfig extends Model
+class SyncAdapterConfig
 {
-    protected $table = 'sync_adapter_settings';
-
-    protected $fillable = ['sync_adapter_instance_id', 'config_key', 'value'];
-
     public static function get(int $instanceId, string $configKey, mixed $default = null): mixed
     {
-        $value = self::query()
-            ->where('sync_adapter_instance_id', $instanceId)
-            ->where('config_key', $configKey)
-            ->value('value');
+        $instance = SyncAdapterInstance::find($instanceId);
+        if ($instance === null) {
+            return $default;
+        }
 
-        return $value ?? $default;
+        $config = $instance->config ?? [];
+
+        return array_key_exists($configKey, $config) ? $config[$configKey] : $default;
     }
 
     public static function put(int $instanceId, string $configKey, ?string $value): void
     {
-        self::query()->updateOrCreate(
-            ['sync_adapter_instance_id' => $instanceId, 'config_key' => $configKey],
-            ['value' => $value],
-        );
+        $instance = SyncAdapterInstance::find($instanceId);
+        if ($instance === null) {
+            return;
+        }
+
+        $config = $instance->config ?? [];
+        $config[$configKey] = $value;
+        $instance->config = $config;
+        $instance->save();
     }
 
     public static function has(int $instanceId, string $configKey): bool
     {
-        return self::query()
-            ->where('sync_adapter_instance_id', $instanceId)
-            ->where('config_key', $configKey)
-            ->whereNotNull('value')
-            ->exists();
+        $instance = SyncAdapterInstance::find($instanceId);
+        if ($instance === null) {
+            return false;
+        }
+
+        $config = $instance->config ?? [];
+
+        return array_key_exists($configKey, $config) && $config[$configKey] !== null;
     }
 
     public static function forget(int $instanceId, string $configKey): void
     {
-        self::query()
-            ->where('sync_adapter_instance_id', $instanceId)
-            ->where('config_key', $configKey)
-            ->delete();
+        $instance = SyncAdapterInstance::find($instanceId);
+        if ($instance === null) {
+            return;
+        }
+
+        $config = $instance->config ?? [];
+        if (! array_key_exists($configKey, $config)) {
+            return;
+        }
+
+        unset($config[$configKey]);
+        $instance->config = $config;
+        $instance->save();
     }
 
     /**
@@ -59,13 +85,10 @@ class SyncAdapterConfig extends Model
      * by callers that need to enumerate a prefix range of keys
      * (e.g. `group_mapping.*`) rather than looking one up at a time.
      *
-     * @return array<string, ?string>
+     * @return array<string, mixed>
      */
     public static function listForInstance(int $instanceId): array
     {
-        return self::query()
-            ->where('sync_adapter_instance_id', $instanceId)
-            ->pluck('value', 'config_key')
-            ->all();
+        return SyncAdapterInstance::find($instanceId)?->config ?? [];
     }
 }

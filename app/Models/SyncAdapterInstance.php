@@ -18,11 +18,14 @@ use Illuminate\Support\Str;
  */
 class SyncAdapterInstance extends Model
 {
-    protected $fillable = ['adapter_type', 'label', 'slug', 'active', 'company_id'];
+    protected $fillable = ['adapter_type', 'label', 'slug', 'active', 'company_id', 'config'];
 
     protected $casts = [
         'active' => 'boolean',
         'last_synced_at' => 'datetime',
+        // Per-instance settings blob. SyncAdapterConfig::get/put/forget
+        // read and write individual keys against this cast array.
+        'config' => 'array',
     ];
 
     /**

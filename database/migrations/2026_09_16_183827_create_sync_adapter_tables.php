@@ -46,27 +46,20 @@ return new class extends Migration
             $table->unique(['source', 'asset_id'], 'aes_source_asset_id_unique');
         });
 
-        // Per-instance key/value config for each adapter instance
-        // (URL, encrypted credentials, mapping.{field} targets,
-        // direction.{field}, group_mapping.{group_id}, cached
-        // vendor metadata, etc). Every config lookup + write goes
-        // through SyncAdapterConfig::get/put/forget, which enforces
-        // the (instance_id, config_key) uniqueness.
-        Schema::create('sync_adapter_settings', function (Blueprint $table) {
-            $table->id();
-            $table->unsignedBigInteger('sync_adapter_instance_id')->index();
-            $table->string('config_key', 191);
-            $table->text('value')->nullable();
-            $table->timestamps();
-            $table->unique(['sync_adapter_instance_id', 'config_key']);
-        });
-
         // One row per configured adapter instance. Adapter TYPES live
         // in the codebase and are discovered at runtime, so nothing
         // gets pre-seeded here. Admins add instances via the settings
         // page. The slug is auto-generated from the label on create
         // and is immutable after (asset_external_sources.source
         // references it, reassigning slugs would orphan assets).
+        //
+        // config holds every per-instance setting (URL, encrypted
+        // credentials, mapping.{field} targets, direction.{field},
+        // group_mapping.{group_id}, cached vendor metadata, etc)
+        // as a single JSON blob. The SyncAdapterConfig helper reads
+        // and writes individual keys against this column so callers
+        // don't have to json_decode themselves. Prior shape was a
+        // separate sync_adapter_settings table with one row per key.
         Schema::create('sync_adapter_instances', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('company_id')->nullable()->index();
@@ -74,6 +67,7 @@ return new class extends Migration
             $table->string('adapter_type', 191)->index();
             $table->string('label', 191);
             $table->boolean('active')->default(true);
+            $table->longText('config')->nullable();
             $table->timestamp('last_synced_at')->nullable()->index();
             $table->text('last_sync_result')->nullable();
             $table->unsignedBigInteger('created_by')->nullable()->index();
@@ -84,7 +78,6 @@ return new class extends Migration
     public function down(): void
     {
         Schema::dropIfExists('sync_adapter_instances');
-        Schema::dropIfExists('sync_adapter_settings');
         Schema::dropIfExists('asset_external_sources');
     }
 };

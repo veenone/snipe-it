@@ -80,7 +80,8 @@ class SyncAdapterDeleteTest extends TestCase
         // page with zero rows. The help tab holds the getting-started
         // copy + list of supported types + CTA button, and is auto-
         // selected so the initial view is not just a blank pane.
-        \App\Models\SyncAdapterConfig::query()->delete();
+        // Config now lives on the instance row as a JSON column, so
+        // wiping the instances table also wipes their configs.
         \App\Models\SyncAdapterInstance::query()->delete();
 
         $html = $this->actingAs(User::factory()->superuser()->create())
@@ -205,29 +206,16 @@ class SyncAdapterDeleteTest extends TestCase
         $this->assertNotSame($source->id, $clone->id);
         $this->assertNotSame($source->slug, $clone->slug);
 
-        // Every config row from source shows up under the clone's id
-        // with the same key + value pair. Source rows are untouched.
-        $this->assertDatabaseHas('sync_adapter_settings', [
-            'sync_adapter_instance_id' => $clone->id,
-            'config_key' => 'url',
-            'value' => 'https://fleet.example',
-        ]);
-        $this->assertDatabaseHas('sync_adapter_settings', [
-            'sync_adapter_instance_id' => $clone->id,
-            'config_key' => 'api_token',
-            'value' => 'secret-token',
-        ]);
-        $this->assertDatabaseHas('sync_adapter_settings', [
-            'sync_adapter_instance_id' => $clone->id,
-            'config_key' => 'mapping.hostname',
-            'value' => 'name',
-        ]);
+        // Every config key from source shows up under the clone
+        // with the same value. Storage is now a JSON blob on the
+        // instance row, so we read through SyncAdapterConfig rather
+        // than querying a settings table.
+        $this->assertSame('https://fleet.example', SyncAdapterConfig::get($clone->id, 'url'));
+        $this->assertSame('secret-token', SyncAdapterConfig::get($clone->id, 'api_token'));
+        $this->assertSame('name', SyncAdapterConfig::get($clone->id, 'mapping.hostname'));
 
         // Source instance's config is untouched.
-        $this->assertDatabaseHas('sync_adapter_settings', [
-            'sync_adapter_instance_id' => $source->id,
-            'config_key' => 'url',
-        ]);
+        $this->assertSame('https://fleet.example', SyncAdapterConfig::get($source->id, 'url'));
     }
 
     public function test_clone_rejects_duplicate_label()
@@ -260,6 +248,5 @@ class SyncAdapterDeleteTest extends TestCase
             ->assertSessionHas('success');
 
         $this->assertDatabaseMissing('sync_adapter_instances', ['id' => $instance->id]);
-        $this->assertDatabaseMissing('sync_adapter_settings', ['sync_adapter_instance_id' => $instance->id]);
     }
 }

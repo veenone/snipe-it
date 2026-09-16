@@ -153,7 +153,9 @@
                                 <div class="sync-adapters-empty-state">
 
 
-                                <h3>{{ trans('admin/settings/sync_adapters.empty_state_title') }}</h3>
+                                    <h3>
+                                        <x-icon type="tip" class="text-info"/> {{ trans('admin/settings/sync_adapters.empty_state_title') }}
+                                    </h3>
                                     <p>{{ trans('admin/settings/sync_adapters.empty_state_intro') }}</p>
                                     <p>{{ trans('admin/settings/sync_adapters.empty_state_supported_intro', ['count' => count($adapterCatalog)]) }}</p>
                                     <ul class="list-unstyled adapter-catalog" aria-label="{{ trans('admin/settings/sync_adapters.catalog_caption') }}">
