@@ -7,14 +7,14 @@ use App\Models\Statuslabel;
 use App\Models\SyncAdapterConfig;
 use App\Models\SyncAdapterInstance;
 use App\SyncAdapters\Fleet\FleetAdapter;
-use App\SyncAdapters\SyncHostFromAdapter;
+use App\SyncAdapters\SyncAdapter;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
 /**
- * End-to-end coverage for the Fleet adapter through SyncHostFromAdapter.
+ * End-to-end coverage for the Fleet adapter through SyncAdapter.
  * Mocks Fleet's REST API, asserts assets + asset_external_sources + side-
  * table rows land correctly, and that a re-run updates instead of
  * duplicating.
@@ -29,7 +29,7 @@ class FleetAdapterTest extends TestCase
     {
         parent::setUp();
 
-        // SyncHostFromAdapter picks a deployable status label or falls
+        // SyncAdapter picks a deployable status label or falls
         // back to any status label. Seed at least one so create doesn't
         // blow up.
         Statuslabel::factory()->rtd()->create();
@@ -52,7 +52,7 @@ class FleetAdapterTest extends TestCase
         ]);
 
         foreach ($adapter->pull() as $record) {
-            SyncHostFromAdapter::run($record);
+            SyncAdapter::syncFromRecord($record);
         }
 
         $this->assertDatabaseCount('asset_external_sources', 2);
@@ -83,7 +83,7 @@ class FleetAdapterTest extends TestCase
 
         // First pull.
         foreach ($adapter->pull() as $record) {
-            SyncHostFromAdapter::run($record);
+            SyncAdapter::syncFromRecord($record);
         }
 
         $this->assertDatabaseCount('asset_external_sources', 1);
@@ -92,7 +92,7 @@ class FleetAdapterTest extends TestCase
 
         // Second pull.
         foreach ($adapter->pull() as $record) {
-            SyncHostFromAdapter::run($record);
+            SyncAdapter::syncFromRecord($record);
         }
 
         // No new rows: same host, same identity link.
@@ -234,7 +234,7 @@ class FleetAdapterTest extends TestCase
         ]);
 
         foreach ($adapter->pull() as $record) {
-            SyncHostFromAdapter::run($record);
+            SyncAdapter::syncFromRecord($record);
         }
 
         $asset = \App\Models\Asset::where('name', 'personal-phone')->firstOrFail();
@@ -261,7 +261,7 @@ class FleetAdapterTest extends TestCase
 
         $adapter = new FleetAdapter($instance);
         foreach ($adapter->pull() as $record) {
-            SyncHostFromAdapter::run($record);
+            SyncAdapter::syncFromRecord($record);
         }
 
         $this->assertDatabaseHas('assets', ['name' => 'scoped-host', 'company_id' => $company->id]);

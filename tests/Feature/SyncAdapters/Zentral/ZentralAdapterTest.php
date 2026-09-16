@@ -5,14 +5,14 @@ namespace Tests\Feature\SyncAdapters\Zentral;
 use App\Models\Statuslabel;
 use App\Models\SyncAdapterConfig;
 use App\Models\SyncAdapterInstance;
-use App\SyncAdapters\SyncHostFromAdapter;
+use App\SyncAdapters\SyncAdapter;
 use App\SyncAdapters\Zentral\ZentralAdapter;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
 /**
- * End-to-end coverage for the Zentral adapter through SyncHostFromAdapter.
+ * End-to-end coverage for the Zentral adapter through SyncAdapter.
  * Fakes Zentral's /api/inventory/machines/ endpoint, asserts assets +
  * asset_external_sources rows land correctly.
  */
@@ -37,7 +37,7 @@ class ZentralAdapterTest extends TestCase
         ]);
 
         foreach ($adapter->pull() as $record) {
-            SyncHostFromAdapter::run($record);
+            SyncAdapter::syncFromRecord($record);
         }
 
         $this->assertDatabaseCount('asset_external_sources', 2);

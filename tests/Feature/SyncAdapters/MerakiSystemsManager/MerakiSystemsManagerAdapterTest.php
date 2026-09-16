@@ -6,14 +6,14 @@ use App\Models\Statuslabel;
 use App\Models\SyncAdapterConfig;
 use App\Models\SyncAdapterInstance;
 use App\SyncAdapters\MerakiSystemsManager\MerakiSystemsManagerAdapter;
-use App\SyncAdapters\SyncHostFromAdapter;
+use App\SyncAdapters\SyncAdapter;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
 /**
  * End-to-end coverage for the Meraki Systems Manager adapter through
- * SyncHostFromAdapter. Fakes the org->networks list and per-network
+ * SyncAdapter. Fakes the org->networks list and per-network
  * SM devices call.
  */
 class MerakiSystemsManagerAdapterTest extends TestCase
@@ -40,7 +40,7 @@ class MerakiSystemsManagerAdapterTest extends TestCase
         ]);
 
         foreach ($adapter->pull() as $record) {
-            SyncHostFromAdapter::run($record);
+            SyncAdapter::syncFromRecord($record);
         }
 
         $this->assertDatabaseCount('asset_external_sources', 2);

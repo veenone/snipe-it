@@ -8,7 +8,7 @@ use App\Models\Statuslabel;
 use App\Models\SyncAdapterConfig;
 use App\Models\SyncAdapterInstance;
 use App\SyncAdapters\AppleBusinessManager\AppleBusinessManagerAdapter;
-use App\SyncAdapters\SyncHostFromAdapter;
+use App\SyncAdapters\SyncAdapter;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
@@ -53,7 +53,7 @@ class ModelImageEnrichmentTest extends TestCase
         $this->fakeAppleDbAndAbm();
 
         foreach ($adapter->pull() as $record) {
-            SyncHostFromAdapter::run($record);
+            SyncAdapter::syncFromRecord($record);
         }
 
         $model->refresh();
@@ -72,7 +72,7 @@ class ModelImageEnrichmentTest extends TestCase
         $this->fakeAppleDbAndAbm();
 
         foreach ($adapter->pull() as $record) {
-            SyncHostFromAdapter::run($record);
+            SyncAdapter::syncFromRecord($record);
         }
 
         $model->refresh();
@@ -98,7 +98,7 @@ class ModelImageEnrichmentTest extends TestCase
         $this->fakeAppleDbAndAbm();
 
         foreach ($adapter->pull() as $record) {
-            SyncHostFromAdapter::run($record);
+            SyncAdapter::syncFromRecord($record);
         }
 
         $model->refresh();
@@ -112,7 +112,7 @@ class ModelImageEnrichmentTest extends TestCase
         $this->fakeAppleDbAndAbm();
 
         foreach ($adapter->pull() as $record) {
-            SyncHostFromAdapter::run($record);
+            SyncAdapter::syncFromRecord($record);
         }
 
         Http::assertNotSent(fn ($request) => str_contains($request->url(), 'appledb.dev'));
@@ -121,7 +121,7 @@ class ModelImageEnrichmentTest extends TestCase
     public function test_first_sync_stages_image_to_disk_even_when_model_row_does_not_exist_yet()
     {
         // Timing gap: ensureModelImage runs inside pull(), before
-        // SyncHostFromAdapter has created the AssetModel row. First
+        // SyncAdapter has created the AssetModel row. First
         // sync must still hit appledb.dev and cache the PNG so the
         // second sync only needs to assign existing->image (no
         // re-download) once the framework creates the row.
@@ -146,7 +146,7 @@ class ModelImageEnrichmentTest extends TestCase
             'img.appledb.dev/*' => Http::response(str_repeat("\x89PNG\r\n\x1a\n", 4)),
         ]);
 
-        // Consume records without running SyncHostFromAdapter so no
+        // Consume records without running SyncAdapter so no
         // AssetModel gets created. Simulates "framework hasn't built
         // the row yet" at the point ensureModelImage runs.
         iterator_to_array($adapter->pull());
@@ -179,7 +179,7 @@ class ModelImageEnrichmentTest extends TestCase
         ]);
 
         foreach ($adapter->pull() as $record) {
-            SyncHostFromAdapter::run($record);
+            SyncAdapter::syncFromRecord($record);
         }
 
         $model->refresh();
@@ -212,7 +212,7 @@ class ModelImageEnrichmentTest extends TestCase
         ]);
 
         foreach ($adapter->pull() as $record) {
-            SyncHostFromAdapter::run($record);
+            SyncAdapter::syncFromRecord($record);
         }
 
         // Even with 5 devices sharing the same hardwareModel, we hit

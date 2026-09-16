@@ -2,7 +2,7 @@
 
 namespace App\Rules;
 
-use App\SyncAdapters\SyncHostFromAdapter;
+use App\SyncAdapters\SyncAdapter;
 use Closure;
 use Illuminate\Contracts\Validation\ValidationRule;
 
@@ -21,18 +21,18 @@ class AssetTagPatternRule implements ValidationRule
 {
     public function validate(string $attribute, mixed $value, Closure $fail): void
     {
-        if (!is_string($value) || $value === '') {
+        if (! is_string($value) || $value === '') {
             return;
         }
 
-        foreach (SyncHostFromAdapter::ASSET_TAG_PATTERN_PLACEHOLDERS as $placeholder) {
+        foreach (SyncAdapter::ASSET_TAG_PATTERN_PLACEHOLDERS as $placeholder) {
             if (str_contains($value, $placeholder)) {
                 return;
             }
         }
 
         $fail(trans('validation.asset_tag_pattern_placeholder', [
-            'placeholders' => implode(', ', SyncHostFromAdapter::ASSET_TAG_PATTERN_PLACEHOLDERS),
+            'placeholders' => implode(', ', SyncAdapter::ASSET_TAG_PATTERN_PLACEHOLDERS),
         ]));
     }
 }

@@ -8,7 +8,7 @@ use App\Models\SyncAdapterConfig;
 use App\Models\SyncAdapterInstance;
 use App\SyncAdapters\Fleet\FleetAdapter;
 use App\SyncAdapters\MappingTargets;
-use App\SyncAdapters\SyncHostFromAdapter;
+use App\SyncAdapters\SyncAdapter;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
@@ -16,7 +16,7 @@ use Tests\TestCase;
 /**
  * Coverage for the extra-field mapping flow: adapters declare
  * vendor-specific extra keys via extraFields(), admin maps each to a
- * custom field, and SyncHostFromAdapter writes the (stringified) value
+ * custom field, and SyncAdapter writes the (stringified) value
  * onto the asset's dynamic column.
  *
  * Fleet is the workhorse here because its normalize() emits a mix of
@@ -50,7 +50,7 @@ class ExtraFieldMappingTest extends TestCase
 
         $adapter = new FleetAdapter($fleet);
         foreach ($adapter->pull() as $record) {
-            SyncHostFromAdapter::run($record);
+            SyncAdapter::syncFromRecord($record);
         }
 
         $this->assertDatabaseHas('assets', [
@@ -82,7 +82,7 @@ class ExtraFieldMappingTest extends TestCase
 
         $adapter = new FleetAdapter($fleet);
         foreach ($adapter->pull() as $record) {
-            SyncHostFromAdapter::run($record);
+            SyncAdapter::syncFromRecord($record);
         }
 
         $this->assertDatabaseHas('assets', [
@@ -107,7 +107,7 @@ class ExtraFieldMappingTest extends TestCase
 
         $adapter = new FleetAdapter($fleet);
         foreach ($adapter->pull() as $record) {
-            SyncHostFromAdapter::run($record);
+            SyncAdapter::syncFromRecord($record);
         }
 
         // Asset created, but the custom-field column stays null since
@@ -178,7 +178,7 @@ class ExtraFieldMappingTest extends TestCase
             assetTag: 'VENDOR-TAG-001',
         );
 
-        SyncHostFromAdapter::run($record);
+        SyncAdapter::syncFromRecord($record);
 
         $this->assertDatabaseHas('assets', [
             'name' => 'host-with-tag',
@@ -203,7 +203,7 @@ class ExtraFieldMappingTest extends TestCase
             assetTag: 'VENDOR-TAG-002',
         );
 
-        SyncHostFromAdapter::run($record);
+        SyncAdapter::syncFromRecord($record);
 
         $this->assertDatabaseHas('assets', [
             'name' => 'host-default-mapping',
@@ -228,7 +228,7 @@ class ExtraFieldMappingTest extends TestCase
             assetTag: 'VENDOR-TAG-003',
         );
 
-        SyncHostFromAdapter::run($record);
+        SyncAdapter::syncFromRecord($record);
 
         $created = \App\Models\Asset::where('name', 'host-skipped-mapping')->firstOrFail();
         $this->assertNotSame('VENDOR-TAG-003', $created->asset_tag);

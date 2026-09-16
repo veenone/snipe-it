@@ -40,6 +40,13 @@ use Illuminate\Support\Facades\Crypt;
  */
 abstract class SyncAdapter
 {
+    // Asset-side upsert path. Exposes SyncAdapter::syncFromRecord($record) as
+    // the public entry point every caller hits. Kept in its own trait
+    // rather than inlined so this file stays focused on the adapter
+    // contract (settings, credentials, mapping, direction, group
+    // scoping, push helpers).
+    use SyncsHostFromRecord;
+
     public function __construct(protected readonly SyncAdapterInstance $instance) {}
 
     /** Display label for the adapter TYPE (not the instance). Shown in the "Add adapter" dropdown. */
@@ -897,7 +904,7 @@ abstract class SyncAdapter
 
     /**
      * Custom asset-tag pattern the admin configured for auto-created
-     * assets. Null when unset (SyncHostFromAdapter falls back to
+     * assets. Null when unset (SyncAdapter falls back to
      * Asset::autoincrement_asset() in that case). Placeholders like
      * `{serial}` / `{external_id}` / `{hostname}` get substituted at
      * create time from HostInventoryRecord fields.
@@ -912,7 +919,7 @@ abstract class SyncAdapter
     /**
      * Default category id for auto-created AssetModels from this
      * adapter. Vendors don't send Snipe-IT's category concept, but
-     * every AssetModel needs one. When null, SyncHostFromAdapter
+     * every AssetModel needs one. When null, SyncAdapter
      * falls back to a get-or-create "Discovered Hardware" category.
      */
     public function defaultCategoryId(): ?int
@@ -929,7 +936,7 @@ abstract class SyncAdapter
      * more specific category than the instance-wide default.
      *
      * Return null to fall through to defaultCategoryId(). The
-     * framework calls this from SyncHostFromAdapter when creating a
+     * framework calls this from SyncAdapter when creating a
      * new AssetModel row, so a null return is equivalent to today's
      * one-category-per-instance behavior.
      *
@@ -942,7 +949,7 @@ abstract class SyncAdapter
 
     /**
      * Default status label id for auto-created assets from this
-     * adapter. When null, SyncHostFromAdapter falls back to the
+     * adapter. When null, SyncAdapter falls back to the
      * first deployable status label (or, absent that, any status
      * label). Admins pick a specific status to route synced devices
      * into a curated workflow bucket ("Awaiting Assignment", "In
@@ -1080,7 +1087,7 @@ abstract class SyncAdapter
 
     /**
      * Snipe-IT company id for a vendor group id, or null when the
-     * group has no mapping. Callers (SyncHostFromAdapter) fall back
+     * group has no mapping. Callers (SyncAdapter) fall back
      * to the instance's own company_id in that case.
      */
     public function companyForVendorGroup(string $vendorGroupId): ?int

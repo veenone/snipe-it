@@ -10,7 +10,7 @@ use App\Models\SyncAdapterConfig;
 use App\Models\SyncAdapterInstance;
 use App\Models\User;
 use App\SyncAdapters\HostInventoryRecord;
-use App\SyncAdapters\SyncHostFromAdapter;
+use App\SyncAdapters\SyncAdapter;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Event;
 use Tests\TestCase;
@@ -39,7 +39,7 @@ class UserAssignmentTest extends TestCase
 
         $user = User::factory()->create(['email' => 'alice@example.test']);
 
-        SyncHostFromAdapter::run(new HostInventoryRecord(
+        SyncAdapter::syncFromRecord(new HostInventoryRecord(
             sourceKey: 'fleet',
             sourceId: 'ua-1',
             hostname: 'alices-laptop',
@@ -60,7 +60,7 @@ class UserAssignmentTest extends TestCase
 
         $user = User::factory()->create(['username' => 'alice.smith']);
 
-        SyncHostFromAdapter::run(new HostInventoryRecord(
+        SyncAdapter::syncFromRecord(new HostInventoryRecord(
             sourceKey: 'fleet',
             sourceId: 'ua-2',
             hostname: 'alices-laptop',
@@ -79,7 +79,7 @@ class UserAssignmentTest extends TestCase
         // Default strategy is 'none' when nothing is stored.
         User::factory()->create(['email' => 'alice@example.test']);
 
-        SyncHostFromAdapter::run(new HostInventoryRecord(
+        SyncAdapter::syncFromRecord(new HostInventoryRecord(
             sourceKey: 'fleet',
             sourceId: 'ua-3',
             hostname: 'no-assignment',
@@ -97,7 +97,7 @@ class UserAssignmentTest extends TestCase
         $fleet = $this->configuredFleet();
         SyncAdapterConfig::put($fleet->id, 'user_match_strategy', 'email');
 
-        SyncHostFromAdapter::run(new HostInventoryRecord(
+        SyncAdapter::syncFromRecord(new HostInventoryRecord(
             sourceKey: 'fleet',
             sourceId: 'ua-4',
             hostname: 'unmatched-host',
@@ -118,7 +118,7 @@ class UserAssignmentTest extends TestCase
         $user = User::factory()->create(['email' => 'alice@example.test']);
 
         // First sync: assigns to alice.
-        SyncHostFromAdapter::run(new HostInventoryRecord(
+        SyncAdapter::syncFromRecord(new HostInventoryRecord(
             sourceKey: 'fleet',
             sourceId: 'ua-5',
             hostname: 'alices-laptop',
@@ -128,7 +128,7 @@ class UserAssignmentTest extends TestCase
         ));
 
         // Second sync of the same asset with no user email.
-        SyncHostFromAdapter::run(new HostInventoryRecord(
+        SyncAdapter::syncFromRecord(new HostInventoryRecord(
             sourceKey: 'fleet',
             sourceId: 'ua-5',
             hostname: 'alices-laptop',
@@ -152,7 +152,7 @@ class UserAssignmentTest extends TestCase
 
         User::factory()->create(['email' => 'alice@example.test']);
 
-        SyncHostFromAdapter::run(new HostInventoryRecord(
+        SyncAdapter::syncFromRecord(new HostInventoryRecord(
             sourceKey: 'fleet',
             sourceId: 'ua-6',
             hostname: 'silent-assign',
@@ -191,7 +191,7 @@ class UserAssignmentTest extends TestCase
         // has no user. Suppress-off would otherwise crash the
         // CheckoutableCheckedOut event (requires User admin), so the
         // sync path silently degrades to direct assignment.
-        SyncHostFromAdapter::run(new HostInventoryRecord(
+        SyncAdapter::syncFromRecord(new HostInventoryRecord(
             sourceKey: 'fleet',
             sourceId: 'ua-8',
             hostname: 'cli-assign',

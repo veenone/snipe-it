@@ -14,7 +14,7 @@ use Tests\TestCase;
  * and via the assets API transformer.
  *
  * The write path is already covered by the per-adapter tests +
- * SyncHostFromAdapter integration tests. This file is the read path.
+ * SyncAdapter integration tests. This file is the read path.
  */
 class ExternalInventorySurfaceTest extends TestCase
 {

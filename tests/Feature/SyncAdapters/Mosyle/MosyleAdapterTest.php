@@ -6,14 +6,14 @@ use App\Models\Statuslabel;
 use App\Models\SyncAdapterConfig;
 use App\Models\SyncAdapterInstance;
 use App\SyncAdapters\Mosyle\MosyleAdapter;
-use App\SyncAdapters\SyncHostFromAdapter;
+use App\SyncAdapters\SyncAdapter;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
 /**
  * End-to-end coverage for the Mosyle adapter through
- * SyncHostFromAdapter. Mocks the Mosyle Manager v2 response shape (the
+ * SyncAdapter. Mocks the Mosyle Manager v2 response shape (the
  * nested response[0].response.rows form), asserts assets + external
  * ids land correctly, and that the client sends POST (not GET) since
  * Mosyle's reads use POST bodies.
@@ -50,7 +50,7 @@ class MosyleAdapterTest extends TestCase
         ]);
 
         foreach ($adapter->pull() as $record) {
-            SyncHostFromAdapter::run($record);
+            SyncAdapter::syncFromRecord($record);
         }
 
         $this->assertDatabaseCount('asset_external_sources', 2);

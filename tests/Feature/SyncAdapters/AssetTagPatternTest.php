@@ -8,14 +8,14 @@ use App\Models\Statuslabel;
 use App\Models\SyncAdapterConfig;
 use App\Models\SyncAdapterInstance;
 use App\SyncAdapters\HostInventoryRecord;
-use App\SyncAdapters\SyncHostFromAdapter;
+use App\SyncAdapters\SyncAdapter;
 use Illuminate\Support\Facades\Crypt;
 use Tests\TestCase;
 
 /**
  * Coverage for the per-adapter asset-tag pattern feature. Admins
  * configure a pattern like `KANDJI-{serial}` on the adapter's
- * settings tab. SyncHostFromAdapter substitutes placeholders from
+ * settings tab. SyncAdapter substitutes placeholders from
  * the HostInventoryRecord when creating new assets. Existing assets
  * keep their tags. the pattern is create-only.
  */
@@ -33,7 +33,7 @@ class AssetTagPatternTest extends TestCase
         $fleet = $this->configuredFleet();
         SyncAdapterConfig::put($fleet->id, 'asset_tag_pattern', 'FLEET-{serial}');
 
-        SyncHostFromAdapter::run(new HostInventoryRecord(
+        SyncAdapter::syncFromRecord(new HostInventoryRecord(
             sourceKey: 'fleet',
             sourceId: '1',
             hostname: 'wksn-01',
@@ -52,7 +52,7 @@ class AssetTagPatternTest extends TestCase
         $fleet = $this->configuredFleet();
         SyncAdapterConfig::put($fleet->id, 'asset_tag_pattern', '{source}-{external_id}');
 
-        SyncHostFromAdapter::run(new HostInventoryRecord(
+        SyncAdapter::syncFromRecord(new HostInventoryRecord(
             sourceKey: 'fleet',
             sourceId: 'host-99',
             hostname: 'wksn-02',
@@ -73,7 +73,7 @@ class AssetTagPatternTest extends TestCase
         $fleet = $this->configuredFleet();
         SyncAdapterConfig::put($fleet->id, 'asset_tag_pattern', 'FLEET-{external_id}-{serial}');
 
-        SyncHostFromAdapter::run(new HostInventoryRecord(
+        SyncAdapter::syncFromRecord(new HostInventoryRecord(
             sourceKey: 'fleet',
             sourceId: 'h1',
             hostname: 'wksn-03',
@@ -94,7 +94,7 @@ class AssetTagPatternTest extends TestCase
         $this->configuredFleet();
         // No asset_tag_pattern stored.
 
-        SyncHostFromAdapter::run(new HostInventoryRecord(
+        SyncAdapter::syncFromRecord(new HostInventoryRecord(
             sourceKey: 'fleet',
             sourceId: 'h42',
             hostname: 'wksn-04',
@@ -117,7 +117,7 @@ class AssetTagPatternTest extends TestCase
         SyncAdapterConfig::put($fleet->id, 'asset_tag_pattern', 'FLEET-{serial}');
 
         // First sync creates the asset.
-        SyncHostFromAdapter::run(new HostInventoryRecord(
+        SyncAdapter::syncFromRecord(new HostInventoryRecord(
             sourceKey: 'fleet',
             sourceId: 'stable-1',
             hostname: 'wksn-05',
@@ -136,7 +136,7 @@ class AssetTagPatternTest extends TestCase
         // not touch asset_tag.
         SyncAdapterConfig::put($fleet->id, 'asset_tag_pattern', 'DIFFERENT-{serial}');
 
-        SyncHostFromAdapter::run(new HostInventoryRecord(
+        SyncAdapter::syncFromRecord(new HostInventoryRecord(
             sourceKey: 'fleet',
             sourceId: 'stable-1',
             hostname: 'wksn-05',
@@ -154,7 +154,7 @@ class AssetTagPatternTest extends TestCase
         $category = \App\Models\Category::factory()->assetLaptopCategory()->create();
         SyncAdapterConfig::put($fleet->id, 'default_category_id', (string) $category->id);
 
-        SyncHostFromAdapter::run(new HostInventoryRecord(
+        SyncAdapter::syncFromRecord(new HostInventoryRecord(
             sourceKey: 'fleet',
             sourceId: 'cat-1',
             hostname: 'wksn-cat',
@@ -171,7 +171,7 @@ class AssetTagPatternTest extends TestCase
         $this->configuredFleet();
         // No default_category_id stored.
 
-        SyncHostFromAdapter::run(new HostInventoryRecord(
+        SyncAdapter::syncFromRecord(new HostInventoryRecord(
             sourceKey: 'fleet',
             sourceId: 'cat-2',
             hostname: 'wksn-discovered',

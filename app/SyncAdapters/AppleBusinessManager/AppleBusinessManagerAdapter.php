@@ -424,7 +424,7 @@ class AppleBusinessManagerAdapter extends SyncAdapter
 
         if ($existing === null) {
             // First-pass timing: the framework hasn't created the
-            // AssetModel row yet (SyncHostFromAdapter builds it after
+            // AssetModel row yet (SyncAdapter builds it after
             // pull() yields), so there's nothing to update. The image
             // is already downloaded and cached under public/uploads/
             // models/ by the fetcher, so the next sync will find the

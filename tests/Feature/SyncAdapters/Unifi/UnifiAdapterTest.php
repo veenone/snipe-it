@@ -5,7 +5,7 @@ namespace Tests\Feature\SyncAdapters\Unifi;
 use App\Models\Statuslabel;
 use App\Models\SyncAdapterConfig;
 use App\Models\SyncAdapterInstance;
-use App\SyncAdapters\SyncHostFromAdapter;
+use App\SyncAdapters\SyncAdapter;
 use App\SyncAdapters\Unifi\UnifiAdapter;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Http;
@@ -13,7 +13,7 @@ use Tests\TestCase;
 
 /**
  * End-to-end coverage for the UniFi adapter through
- * SyncHostFromAdapter. Mocks the UniFi Network Integration API,
+ * SyncAdapter. Mocks the UniFi Network Integration API,
  * asserts assets + asset_external_sources land correctly, and that
  * the X-API-KEY header (not bearer, not session cookies) goes out on
  * the request.
@@ -45,7 +45,7 @@ class UnifiAdapterTest extends TestCase
         ]);
 
         foreach ($adapter->pull() as $record) {
-            SyncHostFromAdapter::run($record);
+            SyncAdapter::syncFromRecord($record);
         }
 
         $this->assertDatabaseCount('asset_external_sources', 2);

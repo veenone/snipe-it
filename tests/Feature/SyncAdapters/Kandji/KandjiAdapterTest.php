@@ -6,13 +6,13 @@ use App\Models\Statuslabel;
 use App\Models\SyncAdapterConfig;
 use App\Models\SyncAdapterInstance;
 use App\SyncAdapters\Kandji\KandjiAdapter;
-use App\SyncAdapters\SyncHostFromAdapter;
+use App\SyncAdapters\SyncAdapter;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
 /**
- * End-to-end coverage for the Kandji adapter through SyncHostFromAdapter.
+ * End-to-end coverage for the Kandji adapter through SyncAdapter.
  * Mocks Kandji's REST API, asserts assets + asset_external_sources land
  * correctly, and that pagination termination on a short page works.
  */
@@ -40,7 +40,7 @@ class KandjiAdapterTest extends TestCase
         ]);
 
         foreach ($adapter->pull() as $record) {
-            SyncHostFromAdapter::run($record);
+            SyncAdapter::syncFromRecord($record);
         }
 
         $this->assertDatabaseCount('asset_external_sources', 2);

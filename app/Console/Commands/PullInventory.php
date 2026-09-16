@@ -3,7 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\SyncAdapterInstance;
-use App\SyncAdapters\SyncHostFromAdapter;
+use App\SyncAdapters\SyncAdapter;
 use Illuminate\Console\Command;
 use Throwable;
 
@@ -108,7 +108,7 @@ class PullInventory extends Command
         try {
             foreach ($adapter->pull() as $record) {
                 try {
-                    SyncHostFromAdapter::run($record);
+                    SyncAdapter::syncFromRecord($record);
                     $seen++;
                 } catch (Throwable $e) {
                     // A single bad record shouldn't take down the run.

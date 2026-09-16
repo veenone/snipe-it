@@ -9,7 +9,7 @@ use App\Models\Statuslabel;
 use App\Models\SyncAdapterConfig;
 use App\Models\SyncAdapterInstance;
 use App\SyncAdapters\HostInventoryRecord;
-use App\SyncAdapters\SyncHostFromAdapter;
+use App\SyncAdapters\SyncAdapter;
 use Illuminate\Support\Facades\Crypt;
 use Tests\TestCase;
 
@@ -36,7 +36,7 @@ class GroupCompanyMappingTest extends TestCase
         $fleet = $this->configuredFleet();
         SyncAdapterConfig::put($fleet->id, 'group_mapping.42', (string) $customerA->id);
 
-        SyncHostFromAdapter::run(new HostInventoryRecord(
+        SyncAdapter::syncFromRecord(new HostInventoryRecord(
             sourceKey: 'fleet',
             sourceId: 'gc-1',
             hostname: 'customer-a-laptop',
@@ -54,7 +54,7 @@ class GroupCompanyMappingTest extends TestCase
         $customerA = Company::factory()->create();
         $this->configuredFleet($customerA->id);
 
-        SyncHostFromAdapter::run(new HostInventoryRecord(
+        SyncAdapter::syncFromRecord(new HostInventoryRecord(
             sourceKey: 'fleet',
             sourceId: 'gc-2',
             hostname: 'unmapped-group-laptop',
@@ -73,7 +73,7 @@ class GroupCompanyMappingTest extends TestCase
         $fleet = $this->configuredFleet($customerA->id);
         SyncAdapterConfig::put($fleet->id, 'group_mapping.42', '999');
 
-        SyncHostFromAdapter::run(new HostInventoryRecord(
+        SyncAdapter::syncFromRecord(new HostInventoryRecord(
             sourceKey: 'fleet',
             sourceId: 'gc-3',
             hostname: 'no-group-laptop',
@@ -94,7 +94,7 @@ class GroupCompanyMappingTest extends TestCase
         SyncAdapterConfig::put($fleet->id, 'group_mapping.10', (string) $customerA->id);
         SyncAdapterConfig::put($fleet->id, 'group_mapping.20', (string) $customerB->id);
 
-        SyncHostFromAdapter::run(new HostInventoryRecord(
+        SyncAdapter::syncFromRecord(new HostInventoryRecord(
             sourceKey: 'fleet',
             sourceId: 'gc-4',
             hostname: 'moving-laptop',
@@ -106,7 +106,7 @@ class GroupCompanyMappingTest extends TestCase
         $asset = Asset::where('name', 'moving-laptop')->firstOrFail();
         $this->assertSame($customerA->id, (int) $asset->company_id);
 
-        SyncHostFromAdapter::run(new HostInventoryRecord(
+        SyncAdapter::syncFromRecord(new HostInventoryRecord(
             sourceKey: 'fleet',
             sourceId: 'gc-4',
             hostname: 'moving-laptop',

@@ -90,7 +90,7 @@ class UnifiAdapter extends SyncAdapter
      * UniFi's `id` (UUID) is stable per adopted device and is what we
      * key asset_external_sources on. Serial is populated on most
      * device types but occasionally null on virtual or legacy devices.
-     * SyncHostFromAdapter treats null serials as acceptable so the
+     * SyncAdapter treats null serials as acceptable so the
      * asset still lands even when the controller doesn't report one.
      *
      * @param  array<string, mixed>  $device

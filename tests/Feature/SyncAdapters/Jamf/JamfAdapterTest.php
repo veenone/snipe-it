@@ -6,14 +6,14 @@ use App\Models\Statuslabel;
 use App\Models\SyncAdapterConfig;
 use App\Models\SyncAdapterInstance;
 use App\SyncAdapters\Jamf\JamfAdapter;
-use App\SyncAdapters\SyncHostFromAdapter;
+use App\SyncAdapters\SyncAdapter;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
 /**
  * End-to-end coverage for the Jamf Pro adapter through
- * SyncHostFromAdapter. Mocks the Jamf Pro API, asserts assets +
+ * SyncAdapter. Mocks the Jamf Pro API, asserts assets +
  * asset_external_sources land correctly, and that the totalCount /
  * pagination termination works.
  */
@@ -41,7 +41,7 @@ class JamfAdapterTest extends TestCase
         ]);
 
         foreach ($adapter->pull() as $record) {
-            SyncHostFromAdapter::run($record);
+            SyncAdapter::syncFromRecord($record);
         }
 
         $this->assertDatabaseCount('asset_external_sources', 2);

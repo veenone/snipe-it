@@ -1106,7 +1106,7 @@ class SettingsController extends Controller
         try {
             foreach ($adapter->pull() as $record) {
                 try {
-                    \App\SyncAdapters\SyncHostFromAdapter::run($record);
+                    \App\SyncAdapters\SyncAdapter::syncFromRecord($record);
                     $seen++;
                 } catch (\Throwable $e) {
                     $errors++;

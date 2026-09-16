@@ -6,14 +6,14 @@ use App\Models\Statuslabel;
 use App\Models\SyncAdapterConfig;
 use App\Models\SyncAdapterInstance;
 use App\SyncAdapters\Osctrl\OsctrlAdapter;
-use App\SyncAdapters\SyncHostFromAdapter;
+use App\SyncAdapters\SyncAdapter;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
 /**
  * End-to-end coverage for the osctrl adapter through
- * SyncHostFromAdapter. Mocks the osctrl nodes response, asserts assets
+ * SyncAdapter. Mocks the osctrl nodes response, asserts assets
  * + external ids land correctly, and that the environment schema
  * field flows into the request URL path (osctrl's API is environment-
  * scoped).
@@ -39,7 +39,7 @@ class OsctrlAdapterTest extends TestCase
         ]);
 
         foreach ($adapter->pull() as $record) {
-            SyncHostFromAdapter::run($record);
+            SyncAdapter::syncFromRecord($record);
         }
 
         $this->assertDatabaseCount('asset_external_sources', 2);

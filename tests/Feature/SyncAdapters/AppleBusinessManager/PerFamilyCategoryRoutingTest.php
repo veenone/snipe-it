@@ -8,7 +8,7 @@ use App\Models\Statuslabel;
 use App\Models\SyncAdapterConfig;
 use App\Models\SyncAdapterInstance;
 use App\SyncAdapters\AppleBusinessManager\AppleBusinessManagerAdapter;
-use App\SyncAdapters\SyncHostFromAdapter;
+use App\SyncAdapters\SyncAdapter;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
@@ -58,7 +58,7 @@ class PerFamilyCategoryRoutingTest extends TestCase
         ]);
 
         foreach ($adapter->pull() as $record) {
-            SyncHostFromAdapter::run($record);
+            SyncAdapter::syncFromRecord($record);
         }
 
         $model = AssetModel::where('name', 'IPD1')->firstOrFail();
@@ -89,7 +89,7 @@ class PerFamilyCategoryRoutingTest extends TestCase
         ]);
 
         foreach ($adapter->pull() as $record) {
-            SyncHostFromAdapter::run($record);
+            SyncAdapter::syncFromRecord($record);
         }
 
         $model = AssetModel::where('name', 'MBP1')->firstOrFail();
@@ -120,7 +120,7 @@ class PerFamilyCategoryRoutingTest extends TestCase
         ]);
 
         foreach ($adapter->pull() as $record) {
-            SyncHostFromAdapter::run($record);
+            SyncAdapter::syncFromRecord($record);
         }
 
         $model = AssetModel::where('name', 'MINI1')->firstOrFail();
@@ -157,7 +157,7 @@ class PerFamilyCategoryRoutingTest extends TestCase
         ]);
 
         foreach ($adapter->pull() as $record) {
-            SyncHostFromAdapter::run($record);
+            SyncAdapter::syncFromRecord($record);
         }
 
         $model = AssetModel::where('name', 'MYST1')->firstOrFail();
@@ -193,7 +193,7 @@ class PerFamilyCategoryRoutingTest extends TestCase
         ]);
 
         foreach ($adapter->pull() as $record) {
-            SyncHostFromAdapter::run($record);
+            SyncAdapter::syncFromRecord($record);
         }
 
         $existingModel->refresh();
@@ -230,7 +230,7 @@ class PerFamilyCategoryRoutingTest extends TestCase
         ]);
 
         foreach ($adapter->pull() as $record) {
-            SyncHostFromAdapter::run($record);
+            SyncAdapter::syncFromRecord($record);
         }
 
         $existingModel->refresh();
@@ -260,7 +260,7 @@ class PerFamilyCategoryRoutingTest extends TestCase
         ]);
 
         foreach ($adapter->pull() as $record) {
-            SyncHostFromAdapter::run($record);
+            SyncAdapter::syncFromRecord($record);
         }
 
         $model = AssetModel::where('name', 'IPD1')->firstOrFail();

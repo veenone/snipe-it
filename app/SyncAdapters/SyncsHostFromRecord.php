@@ -16,22 +16,23 @@ use Illuminate\Support\Facades\Log;
 use RuntimeException;
 
 /**
- * Shared asset-side upsert path for every host-inventory adapter.
- * Accepts a normalized HostInventoryRecord and either creates a new
- * asset or updates an existing one keyed on (source, external_id) in
+ * Shared asset-side upsert path for every host-inventory adapter,
+ * folded onto SyncAdapter via `use SyncsHostFromRecord;` so the entry
+ * point sits on the base class. Accepts a normalized
+ * HostInventoryRecord and either creates a new asset or updates an
+ * existing one keyed on (source, external_id) in
  * asset_external_sources.
  *
- * The write path is deliberately dumb about vendors: no adapter-specific
- * logic lives here. Adapters do their own normalization and hand a
- * clean record over. Per-instance target mappings (configured via
- * MappingTargets on the settings page) let admins redirect each
- * normalized field to a custom field or skip it entirely.
- * SyncHostFromAdapter reads those overrides and dispatches values
- * accordingly.
+ * The write path is deliberately dumb about vendors: no adapter-
+ * specific logic lives here. Adapters do their own normalization and
+ * hand a clean record over. Per-instance target mappings (configured
+ * via MappingTargets on the settings page) let admins redirect each
+ * normalized field to a custom field or skip it entirely. This trait
+ * reads those overrides and dispatches values accordingly.
  */
-class SyncHostFromAdapter
+trait SyncsHostFromRecord
 {
-    public static function run(HostInventoryRecord $record): Asset
+    public static function syncFromRecord(HostInventoryRecord $record): Asset
     {
         return DB::transaction(function () use ($record) {
             $instance = SyncAdapterInstance::query()->where('slug', $record->sourceKey)->first();

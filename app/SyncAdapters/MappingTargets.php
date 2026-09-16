@@ -8,7 +8,7 @@ use App\Models\CustomField;
  * Enumerates the target options each normalized host-inventory field can
  * be mapped to. Every adapter reads the same normalized shape (hostname,
  * serial, model, mac, ip, os, os_version, last_seen) and hands it to
- * SyncHostFromAdapter. per-instance overrides let admins redirect each
+ * SyncAdapter. per-instance overrides let admins redirect each
  * field to a different Snipe-IT destination (native column, side table,
  * custom field, or skip).
  *
@@ -40,7 +40,7 @@ class MappingTargets
 
     /**
      * The shipped default target for a field (before any per-instance
-     * override). Used by SyncHostFromAdapter as the fallback.
+     * override). Used by SyncAdapter as the fallback.
      */
     public static function defaultTarget(string $field): string
     {

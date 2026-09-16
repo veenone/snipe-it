@@ -8,7 +8,7 @@ use App\Models\SyncAdapterConfig;
 use App\Models\SyncAdapterInstance;
 use App\SyncAdapters\Kandji\KandjiAdapter;
 use App\SyncAdapters\PushableAdapter;
-use App\SyncAdapters\SyncHostFromAdapter;
+use App\SyncAdapters\SyncAdapter;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
@@ -48,7 +48,7 @@ class KandjiPushTest extends TestCase
         ]);
 
         foreach ($adapter->pull() as $record) {
-            SyncHostFromAdapter::run($record);
+            SyncAdapter::syncFromRecord($record);
         }
 
         $asset = \App\Models\Asset::where('name', 'test-host')->firstOrFail();
@@ -109,7 +109,7 @@ class KandjiPushTest extends TestCase
         ]);
 
         foreach ($adapter->pull() as $record) {
-            SyncHostFromAdapter::run($record);
+            SyncAdapter::syncFromRecord($record);
         }
 
         $asset = \App\Models\Asset::where('name', 'flip-host')->firstOrFail();

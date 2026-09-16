@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * the last-known network / OS inventory the vendor reported
  * (primary_mac / primary_ip / os / os_version / last_seen).
  *
- * One row per asset today. SyncHostFromAdapter upserts on the
+ * One row per asset today. SyncAdapter upserts on the
  * (source, external_id) unique index and updates the inventory
  * columns on every sync run.
  */

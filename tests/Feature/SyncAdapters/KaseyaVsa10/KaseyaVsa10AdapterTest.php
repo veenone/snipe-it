@@ -6,14 +6,14 @@ use App\Models\Statuslabel;
 use App\Models\SyncAdapterConfig;
 use App\Models\SyncAdapterInstance;
 use App\SyncAdapters\KaseyaVsa10\KaseyaVsa10Adapter;
-use App\SyncAdapters\SyncHostFromAdapter;
+use App\SyncAdapters\SyncAdapter;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
 /**
  * End-to-end coverage for the Kaseya VSA 10 adapter through
- * SyncHostFromAdapter. Fakes the Basic-auth /api/v3/assets endpoint
+ * SyncAdapter. Fakes the Basic-auth /api/v3/assets endpoint
  * and asserts extraction from the nested AssetInfo[] category shape.
  */
 class KaseyaVsa10AdapterTest extends TestCase
@@ -39,7 +39,7 @@ class KaseyaVsa10AdapterTest extends TestCase
         ]);
 
         foreach ($adapter->pull() as $record) {
-            SyncHostFromAdapter::run($record);
+            SyncAdapter::syncFromRecord($record);
         }
 
         $this->assertDatabaseCount('asset_external_sources', 2);
