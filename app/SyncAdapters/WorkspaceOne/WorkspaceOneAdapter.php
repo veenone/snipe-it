@@ -46,6 +46,11 @@ class WorkspaceOneAdapter extends SyncAdapter implements PushableAdapter
         return 'workspace_one';
     }
 
+    public static function docsUrl(): ?string
+    {
+        return 'https://developer.omnissa.com/workspace-one-uem-apis/';
+    }
+
     public function baseUrlPlaceholder(): ?string
     {
         return 'https://as###.awmdm.com';

@@ -23618,6 +23618,36 @@ its trigger in both modes.
   background-color: var(--box-bg) !important;
   border-color: var(--box-header-top-border-color);
 }
+.table-hover > tbody > tr:hover > td,
+.table-hover > tbody > tr:hover > th {
+  background-color: var(--table-stripe-bg-alt) !important;
+}
+.adapter-catalog {
+  margin: 0;
+}
+.adapter-catalog .adapter-catalog-item {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--table-border-row-color);
+}
+.adapter-catalog .adapter-catalog-item:last-child {
+  border-bottom: 0;
+}
+.adapter-catalog .adapter-catalog-item:hover {
+  background-color: var(--table-stripe-bg-alt);
+}
+.adapter-catalog .adapter-catalog-docs {
+  width: 28px;
+  text-align: center;
+  margin-right: 8px;
+}
+.adapter-catalog .adapter-catalog-name {
+  flex: 1;
+}
+.adapter-catalog .adapter-catalog-add {
+  margin-left: 8px;
+}
 .nav-tabs-custom > .nav-tabs > li.active {
   border-top-color: var(--main-theme-color) !important;
   background-color: var(--box-header-top-border-color) !important;
@@ -27491,6 +27521,36 @@ its trigger in both modes.
 .panel-footer {
   background-color: var(--box-bg) !important;
   border-color: var(--box-header-top-border-color);
+}
+.table-hover > tbody > tr:hover > td,
+.table-hover > tbody > tr:hover > th {
+  background-color: var(--table-stripe-bg-alt) !important;
+}
+.adapter-catalog {
+  margin: 0;
+}
+.adapter-catalog .adapter-catalog-item {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--table-border-row-color);
+}
+.adapter-catalog .adapter-catalog-item:last-child {
+  border-bottom: 0;
+}
+.adapter-catalog .adapter-catalog-item:hover {
+  background-color: var(--table-stripe-bg-alt);
+}
+.adapter-catalog .adapter-catalog-docs {
+  width: 28px;
+  text-align: center;
+  margin-right: 8px;
+}
+.adapter-catalog .adapter-catalog-name {
+  flex: 1;
+}
+.adapter-catalog .adapter-catalog-add {
+  margin-left: 8px;
 }
 .nav-tabs-custom > .nav-tabs > li.active {
   border-top-color: var(--main-theme-color) !important;

@@ -24,6 +24,11 @@ class AddigyAdapter extends SyncAdapter
         return 'addigy';
     }
 
+    public static function docsUrl(): ?string
+    {
+        return 'https://api.addigy.com/api/v2/documentation/';
+    }
+
     public function baseUrlPlaceholder(): ?string
     {
         return 'https://prod.addigy.com';

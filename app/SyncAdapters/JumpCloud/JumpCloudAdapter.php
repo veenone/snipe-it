@@ -25,6 +25,11 @@ class JumpCloudAdapter extends SyncAdapter
         return 'jumpcloud';
     }
 
+    public static function docsUrl(): ?string
+    {
+        return 'https://docs.jumpcloud.com/api/2.0/index.html';
+    }
+
     public function baseUrlPlaceholder(): ?string
     {
         return 'https://console.jumpcloud.com/api';

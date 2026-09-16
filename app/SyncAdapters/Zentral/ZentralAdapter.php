@@ -24,6 +24,11 @@ class ZentralAdapter extends SyncAdapter
         return 'zentral';
     }
 
+    public static function docsUrl(): ?string
+    {
+        return 'https://www.zentral.com/docs/zentral/';
+    }
+
     public function settingsSchema(): array
     {
         return [

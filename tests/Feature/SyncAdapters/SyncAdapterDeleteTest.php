@@ -28,8 +28,12 @@ class SyncAdapterDeleteTest extends TestCase
             ->assertOk()
             ->getContent();
 
+        // Visibility is now owned by the wrapping #adapter-footer.
+        // With an adapter selected on initial render the footer wrapper
+        // must not carry an inline display: none, and the delete
+        // trigger must point at the selected adapter's destroy URL.
         $this->assertMatchesRegularExpression(
-            '/id="adapter-delete-trigger"[^>]*style=""/i',
+            '/id="adapter-footer"(?![^>]*display:\s*none)/i',
             $html,
         );
 

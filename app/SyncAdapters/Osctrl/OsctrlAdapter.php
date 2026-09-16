@@ -28,6 +28,11 @@ class OsctrlAdapter extends SyncAdapter
         return 'osctrl';
     }
 
+    public static function docsUrl(): ?string
+    {
+        return 'https://osctrl.net/usage/osctrl-api/';
+    }
+
     public function settingsSchema(): array
     {
         return [

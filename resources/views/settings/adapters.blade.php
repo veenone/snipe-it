@@ -70,6 +70,8 @@
                                     href="#adapter-pane-{{ $adapter->name() }}"
                                     role="tab"
                                     data-toggle="tab"
+                                    aria-controls="adapter-pane-{{ $adapter->name() }}"
+                                    aria-selected="{{ $selected?->name() === $adapter->name() ? 'true' : 'false' }}"
                                     data-adapter-name="{{ $adapter->name() }}"
                                     data-adapter-destroy-url="{{ route('settings.adapters.destroy', $adapter->name()) }}"
                                     data-adapter-delete-confirm="{{ $adapterDeleteConfirm }}"
@@ -98,6 +100,26 @@
                             </li>
                         @endforeach
 
+                        {{-- Help tab. Real tab-pane below. Always available so
+                             admins can revisit the getting-started copy and
+                             the list of shipped adapter types after their
+                             first setup. Default-active when no adapters
+                             are configured. Positioned above Add adapter so
+                             empty installs don't render a lone "Add adapter"
+                             tab active-looking above a lonely Help entry. --}}
+                        <li role="presentation" @class(['active' => $selected === null])>
+                            <a
+                                href="#adapter-pane-help"
+                                role="tab"
+                                data-toggle="tab"
+                                aria-controls="adapter-pane-help"
+                                aria-selected="{{ $selected === null ? 'true' : 'false' }}"
+                            >
+                                <x-icon type="tip" class="fa-fw text-info"/>
+                                {{ trans('admin/settings/sync_adapters.help_tab_label') }}
+                            </a>
+                        </li>
+
                         {{-- Add-adapter tab. Not a real tab-pane. Clicking it opens the modal instead. --}}
                         <li role="presentation">
                             <a
@@ -107,22 +129,6 @@
                             >
                                 <x-icon type="create" class="fa-fw"/>
                                 {{ trans('admin/settings/sync_adapters.add_button') }}
-                            </a>
-                        </li>
-
-                        {{-- Help tab. Real tab-pane below. Always available so
-                             admins can revisit the getting-started copy and
-                             the list of shipped adapter types after their
-                             first setup. Default-active when no adapters
-                             are configured. --}}
-                        <li role="presentation" @class(['active' => $selected === null])>
-                            <a
-                                href="#adapter-pane-help"
-                                role="tab"
-                                data-toggle="tab"
-                            >
-                                <x-icon type="tip" class="fa-fw text-info"/>
-                                {{ trans('admin/settings/sync_adapters.help_tab_label') }}
                             </a>
                         </li>
                     </ul>
@@ -149,28 +155,50 @@
 
                                 <h3>{{ trans('admin/settings/sync_adapters.empty_state_title') }}</h3>
                                     <p>{{ trans('admin/settings/sync_adapters.empty_state_intro') }}</p>
-                                    <p>{{ trans('admin/settings/sync_adapters.empty_state_supported_intro', ['count' => count($adapterTypes)]) }}</p>
-                                    <ul>
-                                        @foreach ($adapterTypes as $slug => $label)
-                                            <li>{{ $label }}</li>
+                                    <p>{{ trans('admin/settings/sync_adapters.empty_state_supported_intro', ['count' => count($adapterCatalog)]) }}</p>
+                                    <ul class="list-unstyled adapter-catalog" aria-label="{{ trans('admin/settings/sync_adapters.catalog_caption') }}">
+                                        @foreach ($adapterCatalog as $slug => $entry)
+                                            <li class="adapter-catalog-item">
+                                                <span class="adapter-catalog-docs">
+                                                    @if ($entry['docs_url'])
+                                                        @php
+                                                            $docsLinkLabel = trans('admin/settings/sync_adapters.catalog_docs_link_label', ['adapter' => $entry['label']]);
+                                                        @endphp
+                                                        <a
+                                                            href="{{ $entry['docs_url'] }}"
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            class="tooltip-base"
+                                                            data-placement="right"
+                                                            title="{{ $docsLinkLabel }}"
+                                                            aria-label="{{ $docsLinkLabel }}"
+                                                        >
+                                                            <x-icon type="external-link" class="fa-fw"/>
+                                                        </a>
+                                                    @else
+                                                        <span class="sr-only">{{ trans('admin/settings/sync_adapters.catalog_docs_none') }}</span>
+                                                    @endif
+                                                </span>
+                                                <span class="adapter-catalog-name">{{ $entry['label'] }}</span>
+                                                <button
+                                                    type="button"
+                                                    class="btn btn-sm btn-success tooltip-base adapter-catalog-add"
+                                                    data-toggle="modal"
+                                                    data-target="#add-adapter-modal"
+                                                    data-adapter-type="{{ $slug }}"
+                                                    data-placement="left"
+                                                    title="{{ trans('admin/settings/sync_adapters.catalog_add_tooltip') }}"
+                                                    aria-label="{{ trans('admin/settings/sync_adapters.catalog_add_aria', ['label' => $entry['label']]) }}"
+                                                >
+                                                    <x-icon type="create" class="fa-fw"/>
+                                                </button>
+                                            </li>
                                         @endforeach
                                     </ul>
-                                    <p>{{ trans('admin/settings/sync_adapters.empty_state_cta') }}</p>
-                                    <p>
-                                        <button
-                                            type="button"
-                                            class="btn btn-primary"
-                                            data-toggle="modal"
-                                            data-target="#add-adapter-modal"
-                                        >
-                                            <x-icon type="create"/>
-                                            {{ trans('admin/settings/sync_adapters.add_button') }}
-                                        </button>
-                                    </p>
+
 
                                     <h4>{{ trans('admin/settings/sync_adapters.empty_state_company_title') }}</h4>
                                     <p>{{ trans('admin/settings/sync_adapters.empty_state_company_intro') }}</p>
-                                    <p>{{ trans('admin/settings/sync_adapters.empty_state_company_filter_note') }}</p>
                                     <p>{{ trans('admin/settings/sync_adapters.empty_state_company_clone_note') }}</p>
                                 </div>
                             </div>
@@ -179,7 +207,13 @@
             </div>
 
             <x-slot:customfooter>
-                <div class="box-footer">
+                {{-- The whole footer collapses when Help (or any non-adapter
+                     tab) is active, since Save / Delete / Clone are all
+                     adapter-scoped actions and leaving the padded strip
+                     visible reads as a blank UI dead-zone. Tab-switch JS
+                     below flips the display back on when an adapter tab
+                     becomes active. --}}
+                <div id="adapter-footer" class="box-footer" style="{{ $selected ? '' : 'display: none;' }}">
                     <div class="row">
                         <div class="text-left col-md-6">
                             @php
@@ -200,7 +234,6 @@
                                 data-title="{{ trans('admin/settings/sync_adapters.delete_button') }}"
                                 data-content="{{ $selectedDeleteConfirm }}"
                                 data-icon="fa fa-trash"
-                                style="{{ $selected ? '' : 'display: none;' }}"
                                 onclick="return false;"
                                 @disabled(config('app.lock_passwords') === true)
                             >
@@ -214,7 +247,6 @@
                                 class="btn btn-info"
                                 data-toggle="modal"
                                 data-target="#clone-adapter-modal"
-                                style="{{ $selected ? '' : 'display: none;' }}"
                                 @disabled(config('app.lock_passwords') === true)
                             >
                                 <x-icon type="clone"/>
@@ -227,7 +259,6 @@
                                 class="btn-success"
                                 form="adapter-form-{{ $selected?->name() }}"
                                 :disabled="config('app.lock_passwords') === true"
-                                :style="$selected ? '' : 'display: none;'"
                             />
                         </div>
                     </div>
@@ -322,12 +353,23 @@
         // so Save + Delete hide when it's active (detected via absence
         // of a destroy-url data attribute).
         document.addEventListener('DOMContentLoaded', function () {
+            var footer = document.getElementById('adapter-footer');
             var saveBtn = document.getElementById('adapter-save-button');
             var deleteTrigger = document.getElementById('adapter-delete-trigger');
-            var cloneTrigger = document.getElementById('adapter-clone-trigger');
             var cloneModal = document.getElementById('clone-adapter-modal');
             var cloneForm = cloneModal ? cloneModal.querySelector('form') : null;
             var cloneLabelInput = document.getElementById('clone_adapter_label');
+
+            // Preselect the adapter-type in the Add adapter modal when
+            // triggered from a catalog row's plus button. Falls back to
+            // the empty option when opened from the sidebar tab or the
+            // empty-state CTA button. select2 needs a trigger('change')
+            // for its visible display to sync with the underlying value.
+            $('#add-adapter-modal').on('show.bs.modal', function (event) {
+                var trigger = event.relatedTarget;
+                var adapterType = trigger ? trigger.getAttribute('data-adapter-type') : null;
+                $('#add-adapter-modal select[name="adapter_type"]').val(adapterType || '').trigger('change');
+            });
 
             // Breadcrumb append (Sync Adapters > active-tab-label) is
             // handled globally in snipeit.js off the data-breadcrumb-label
@@ -352,9 +394,8 @@
                     url.hash = '';
 
                     if (destroyUrl) {
-                        saveBtn.style.display = '';
+                        if (footer) { footer.style.display = ''; }
                         saveBtn.setAttribute('form', 'adapter-form-' + name);
-                        deleteTrigger.style.display = '';
                         deleteTrigger.setAttribute('data-href', destroyUrl);
                         var confirmMsg = e.target.getAttribute('data-adapter-delete-confirm');
                         if (confirmMsg) {
@@ -366,9 +407,6 @@
                         // pre-baked "Copy of {label}" default.
                         var cloneUrl = e.target.getAttribute('data-adapter-clone-url');
                         var cloneLabelDefault = e.target.getAttribute('data-adapter-clone-label-default');
-                        if (cloneTrigger) {
-                            cloneTrigger.style.display = '';
-                        }
                         if (cloneForm && cloneUrl) {
                             cloneForm.setAttribute('action', cloneUrl);
                         }
@@ -379,11 +417,7 @@
                         url.searchParams.set('adapter', name);
                     }
                     else {
-                        saveBtn.style.display = 'none';
-                        deleteTrigger.style.display = 'none';
-                        if (cloneTrigger) {
-                            cloneTrigger.style.display = 'none';
-                        }
+                        if (footer) { footer.style.display = 'none'; }
                         url.searchParams.delete('adapter');
                     }
 

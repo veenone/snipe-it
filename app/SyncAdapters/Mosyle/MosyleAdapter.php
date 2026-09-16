@@ -30,6 +30,11 @@ class MosyleAdapter extends SyncAdapter implements PushableAdapter
         return 'mosyle';
     }
 
+    public static function docsUrl(): ?string
+    {
+        return 'https://school.mosyle.com/solutions/macos/privilege-management';
+    }
+
     public function baseUrlPlaceholder(): ?string
     {
         return 'https://managerapi.mosyle.com/v2';

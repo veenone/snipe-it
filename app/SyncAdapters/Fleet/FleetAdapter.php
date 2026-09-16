@@ -31,6 +31,11 @@ class FleetAdapter extends SyncAdapter
         return 'fleet';
     }
 
+    public static function docsUrl(): ?string
+    {
+        return 'https://fleetdm.com/docs/rest-api/rest-api';
+    }
+
     public function settingsSchema(): array
     {
         return [

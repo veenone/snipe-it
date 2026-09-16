@@ -45,6 +45,11 @@ class KaseyaVsa10Adapter extends SyncAdapter
         return 'kaseya_vsa10';
     }
 
+    public static function docsUrl(): ?string
+    {
+        return 'https://help.vsa10.kaseya.com/help/Content/2-Administration/configuration/api.htm';
+    }
+
     public function baseUrlPlaceholder(): ?string
     {
         return 'https://your-tenant.vsax.net';

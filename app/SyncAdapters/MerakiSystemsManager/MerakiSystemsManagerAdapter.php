@@ -29,6 +29,11 @@ class MerakiSystemsManagerAdapter extends SyncAdapter
         return 'meraki_sm';
     }
 
+    public static function docsUrl(): ?string
+    {
+        return 'https://developer.cisco.com/meraki/api-v1/';
+    }
+
     public function baseUrlPlaceholder(): ?string
     {
         return 'https://api.meraki.com/api/v1';

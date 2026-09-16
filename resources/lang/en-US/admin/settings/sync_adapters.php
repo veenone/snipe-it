@@ -29,6 +29,11 @@ return [
     'empty_state_intro' => 'Sync adapters connect Snipe-IT to the MDM, RMM, and endpoint tools you already use, so devices and their assigned users flow into Snipe-IT automatically instead of being typed in by hand.',
     'empty_state_supported_intro' => 'Snipe-IT currently supports :count adapter types out of the box:',
     'empty_state_cta' => 'Click "Add adapter" to configure one. You can add as many as you like, including multiple instances of the same vendor.',
+    'catalog_caption' => 'Supported sync adapters. Click the + button on any row to start configuring an instance of that type.',
+    'catalog_add_aria' => 'Add :label adapter',
+    'catalog_add_tooltip' => 'Add new',
+    'catalog_docs_link_label' => 'API docs for :adapter',
+    'catalog_docs_none' => 'No public API docs available for this adapter.',
 
     'add_button' => 'Add adapter',
     'add_modal_title' => 'Add sync adapter',

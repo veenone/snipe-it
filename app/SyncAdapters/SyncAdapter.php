@@ -53,6 +53,18 @@ abstract class SyncAdapter
      */
     abstract public static function typeSlug(): string;
 
+    /**
+     * Link to the vendor's public API documentation. Rendered as an
+     * external link in the adapter catalog so admins can jump to the
+     * vendor's own reference for the endpoints this adapter hits.
+     * Return null when the vendor has no stable public docs URL or
+     * gates its docs behind a login.
+     */
+    public static function docsUrl(): ?string
+    {
+        return null;
+    }
+
     /** Vendor-specific inventory fetch. Yield HostInventoryRecord objects. */
     abstract public function pull(): iterable;
 
@@ -125,6 +137,29 @@ abstract class SyncAdapter
         $out = [];
         foreach (self::allTypes() as $slug => $class) {
             $out[$slug] = $class::typeLabel();
+        }
+
+        return $out;
+    }
+
+    /**
+     * Type slug -> {label, docs_url} catalog. Powers the help pane's
+     * table of supported adapters so admins can jump into either the
+     * "Add adapter" modal with the type pre-selected or the docs page
+     * (vendor's own for named adapters, Snipe-IT's own for Custom
+     * HTTP). docs_url is null for adapters whose vendor has no stable
+     * public reference URL or gates its docs behind a login.
+     *
+     * @return array<string, array{label: string, docs_url: ?string}>
+     */
+    public static function typeCatalog(): array
+    {
+        $out = [];
+        foreach (self::allTypes() as $slug => $class) {
+            $out[$slug] = [
+                'label' => $class::typeLabel(),
+                'docs_url' => $class::docsUrl(),
+            ];
         }
 
         return $out;

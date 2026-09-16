@@ -874,6 +874,7 @@ class SettingsController extends Controller
     public function getAdapters(Request $request): View|RedirectResponse
     {
         $adapterTypes = \App\SyncAdapters\SyncAdapter::typeLabels();
+        $adapterCatalog = \App\SyncAdapters\SyncAdapter::typeCatalog();
 
         // The filter is for UX when per-company adapters exist. Gate on whether the
         // install has any companies at all. 'Shared' means "no company_id" (built-ins and adapters available to all).
@@ -938,7 +939,7 @@ class SettingsController extends Controller
             ->all();
 
         return view('settings.adapters', compact(
-            'adapters', 'adapterTypes', 'selected', 'companies', 'hasCompanies', 'selectedCompany', 'syncedCounts',
+            'adapters', 'adapterTypes', 'adapterCatalog', 'selected', 'companies', 'hasCompanies', 'selectedCompany', 'syncedCounts',
         ));
     }
 

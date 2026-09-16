@@ -82,6 +82,11 @@ class CustomHttpAdapter extends SyncAdapter implements PushableAdapter
         return 'custom_http';
     }
 
+    public static function docsUrl(): ?string
+    {
+        return 'https://snipe-it.readme.io/docs/sync-adapters#custom-http-adapter';
+    }
+
     public function settingsSchema(): array
     {
         return [

@@ -81,6 +81,11 @@ class AppleBusinessManagerAdapter extends SyncAdapter
         return 'abm';
     }
 
+    public static function docsUrl(): ?string
+    {
+        return 'https://developer.apple.com/documentation/apple-school-and-business-manager-api';
+    }
+
     /**
      * ABM/ASM base URLs are host-fixed per mode (business or school),
      * so the admin never types a URL. Mode selection in the

@@ -40,6 +40,11 @@ class IntuneAdapter extends SyncAdapter implements PushableAdapter
         return 'intune';
     }
 
+    public static function docsUrl(): ?string
+    {
+        return 'https://learn.microsoft.com/en-us/graph/api/resources/intune-graph-overview';
+    }
+
     public function baseUrlPlaceholder(): ?string
     {
         return 'https://graph.microsoft.com';

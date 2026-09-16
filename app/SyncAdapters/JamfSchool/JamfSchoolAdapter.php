@@ -26,6 +26,11 @@ class JamfSchoolAdapter extends SyncAdapter
         return 'jamf_school';
     }
 
+    public static function docsUrl(): ?string
+    {
+        return 'https://learn.jamf.com/r/en-US/jamf-school-documentation/Jamf_School_API';
+    }
+
     public function baseUrlPlaceholder(): ?string
     {
         return 'https://your-subdomain.jamfcloud.com/api';

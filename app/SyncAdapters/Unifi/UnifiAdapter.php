@@ -35,6 +35,11 @@ class UnifiAdapter extends SyncAdapter
         return 'unifi';
     }
 
+    public static function docsUrl(): ?string
+    {
+        return 'https://developer.ui.com/network/v10.4.57/gettingstarted';
+    }
+
     public function baseUrlPlaceholder(): ?string
     {
         return 'https://your-controller:8443';

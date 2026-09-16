@@ -43,6 +43,11 @@ class NinjaOneAdapter extends SyncAdapter implements PushableAdapter
         return 'ninjaone';
     }
 
+    public static function docsUrl(): ?string
+    {
+        return 'https://www.ninjaone.com/docs/application-programming-interface-api/public-api-operations/';
+    }
+
     public function baseUrlPlaceholder(): ?string
     {
         return 'https://app.ninjarmm.com';

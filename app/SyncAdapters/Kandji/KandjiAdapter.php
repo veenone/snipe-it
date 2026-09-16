@@ -28,6 +28,11 @@ class KandjiAdapter extends SyncAdapter implements PushableAdapter
         return 'kandji';
     }
 
+    public static function docsUrl(): ?string
+    {
+        return 'https://api-docs.kandji.io/';
+    }
+
     public function baseUrlPlaceholder(): ?string
     {
         return 'https://your-subdomain.api.kandji.io';

@@ -29,6 +29,11 @@ class JamfAdapter extends SyncAdapter implements PushableAdapter
         return 'jamf';
     }
 
+    public static function docsUrl(): ?string
+    {
+        return 'https://developer.jamf.com/jamf-pro/reference';
+    }
+
     public function baseUrlPlaceholder(): ?string
     {
         return 'https://your-subdomain.jamfcloud.com';
