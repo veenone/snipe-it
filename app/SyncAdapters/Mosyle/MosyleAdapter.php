@@ -25,6 +25,11 @@ class MosyleAdapter extends SyncAdapter implements PushableAdapter
         return 'Mosyle';
     }
 
+    public static function typeSlug(): string
+    {
+        return 'mosyle';
+    }
+
     public function baseUrlPlaceholder(): ?string
     {
         return 'https://managerapi.mosyle.com/v2';

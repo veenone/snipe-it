@@ -5,8 +5,6 @@ namespace App\SyncAdapters;
 use App\Models\SyncAdapterConfig;
 use App\Models\SyncAdapterInstance;
 use App\Rules\ExternalUrl;
-use App\SyncAdapters\Support\MappingTargets;
-use App\SyncAdapters\Support\NotesComposer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Crypt;
 
@@ -47,8 +45,107 @@ abstract class SyncAdapter
     /** Display label for the adapter TYPE (not the instance). Shown in the "Add adapter" dropdown. */
     abstract public static function typeLabel(): string;
 
+    /**
+     * Stable identifier stored in sync_adapter_instances.adapter_type.
+     * Distinct from typeLabel() (localized display string) and name()
+     * (per-instance slug). Adapters declare their own so the discovery
+     * loop below can key the class map without a central registry.
+     */
+    abstract public static function typeSlug(): string;
+
     /** Vendor-specific inventory fetch. Yield HostInventoryRecord objects. */
     abstract public function pull(): iterable;
+
+    /**
+     * Discover every adapter subclass under app/SyncAdapters/*Adapter.php
+     * and return a slug-keyed map of the concrete classes. Cached in a
+     * static so repeat calls within a request don't re-scan the tree.
+     *
+     * @return array<string, class-string<self>>
+     */
+    public static function allTypes(): array
+    {
+        static $cache = null;
+        if ($cache !== null) {
+            return $cache;
+        }
+
+        $out = [];
+        $base = app_path('SyncAdapters').DIRECTORY_SEPARATOR;
+        foreach (glob($base.'*'.DIRECTORY_SEPARATOR.'*Adapter.php') as $file) {
+            $relative = substr($file, strlen($base), -4);
+            $class = 'App\\SyncAdapters\\'.str_replace(DIRECTORY_SEPARATOR, '\\', $relative);
+            if (! class_exists($class) || ! is_subclass_of($class, self::class)) {
+                continue;
+            }
+            $reflection = new \ReflectionClass($class);
+            if ($reflection->isAbstract()) {
+                continue;
+            }
+            $out[$class::typeSlug()] = $class;
+        }
+        ksort($out);
+
+        return $cache = $out;
+    }
+
+    /**
+     * Instantiate the adapter class for a given SyncAdapterInstance row.
+     * Returns null when the instance's adapter_type doesn't match any
+     * discovered class (e.g. an old row for a removed adapter).
+     */
+    public static function factory(SyncAdapterInstance $instance): ?static
+    {
+        $types = self::allTypes();
+        $class = $types[$instance->adapter_type] ?? null;
+        if ($class === null) {
+            return null;
+        }
+
+        return new $class($instance);
+    }
+
+    /**
+     * List of registered type slugs, in the same order as allTypes().
+     *
+     * @return array<int, string>
+     */
+    public static function typeNames(): array
+    {
+        return array_keys(self::allTypes());
+    }
+
+    /**
+     * Type slug -> display label. Powers the "Add adapter" dropdown.
+     *
+     * @return array<string, string>
+     */
+    public static function typeLabels(): array
+    {
+        $out = [];
+        foreach (self::allTypes() as $slug => $class) {
+            $out[$slug] = $class::typeLabel();
+        }
+
+        return $out;
+    }
+
+    /**
+     * Hydrate every configured instance from the database as a live
+     * adapter, skipping rows whose adapter_type is no longer registered.
+     *
+     * @return array<int, self>
+     */
+    public static function allInstances(): array
+    {
+        return SyncAdapterInstance::query()
+            ->orderBy('label')
+            ->get()
+            ->map(fn (SyncAdapterInstance $i) => self::factory($i))
+            ->filter()
+            ->values()
+            ->all();
+    }
 
     /**
      * Declare this adapter's authentication field schema. The base

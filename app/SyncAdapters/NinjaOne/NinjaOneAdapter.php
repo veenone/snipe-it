@@ -38,6 +38,11 @@ class NinjaOneAdapter extends SyncAdapter implements PushableAdapter
         return 'NinjaOne';
     }
 
+    public static function typeSlug(): string
+    {
+        return 'ninjaone';
+    }
+
     public function baseUrlPlaceholder(): ?string
     {
         return 'https://app.ninjarmm.com';

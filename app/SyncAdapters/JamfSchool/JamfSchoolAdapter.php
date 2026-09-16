@@ -21,6 +21,11 @@ class JamfSchoolAdapter extends SyncAdapter
         return 'Jamf School';
     }
 
+    public static function typeSlug(): string
+    {
+        return 'jamf_school';
+    }
+
     public function baseUrlPlaceholder(): ?string
     {
         return 'https://your-subdomain.jamfcloud.com/api';

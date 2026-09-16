@@ -30,6 +30,11 @@ class UnifiAdapter extends SyncAdapter
         return 'UniFi';
     }
 
+    public static function typeSlug(): string
+    {
+        return 'unifi';
+    }
+
     public function baseUrlPlaceholder(): ?string
     {
         return 'https://your-controller:8443';

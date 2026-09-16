@@ -19,6 +19,11 @@ class ZentralAdapter extends SyncAdapter
         return 'Zentral';
     }
 
+    public static function typeSlug(): string
+    {
+        return 'zentral';
+    }
+
     public function settingsSchema(): array
     {
         return [

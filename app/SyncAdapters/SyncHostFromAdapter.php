@@ -12,7 +12,7 @@ use App\Models\SyncAdapterConfig;
 use App\Models\SyncAdapterInstance;
 use App\Models\User;
 use App\SyncAdapters\SyncAdapter;
-use App\SyncAdapters\Support\MappingTargets;
+use App\SyncAdapters\MappingTargets;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use RuntimeException;

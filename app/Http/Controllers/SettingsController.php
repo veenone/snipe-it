@@ -625,7 +625,7 @@ class SettingsController extends Controller
         $setting->label2_2d_target = $request->input('label2_2d_target');
         $setting->label2_fields = $request->input('label2_fields');
         $setting->label2_empty_row_count = $request->input('label2_empty_row_count');
-        if (!$wasLabel2Enabled && !$request->boolean('label2_enable')) {
+        if (! $wasLabel2Enabled && ! $request->boolean('label2_enable')) {
             $setting->labels_per_page = $request->input('labels_per_page');
             $setting->labels_width = $request->input('labels_width');
             $setting->labels_height = $request->input('labels_height');
@@ -873,7 +873,7 @@ class SettingsController extends Controller
      */
     public function getAdapters(Request $request): View|RedirectResponse
     {
-        $adapterTypes = \App\SyncAdapters\AdapterRegistry::typeLabels();
+        $adapterTypes = \App\SyncAdapters\SyncAdapter::typeLabels();
 
         // The filter is for UX when per-company adapters exist. Gate on whether the
         // install has any companies at all. 'Shared' means "no company_id" (built-ins and adapters available to all).
@@ -899,7 +899,7 @@ class SettingsController extends Controller
         // database ORDER BY label.
         $readinessRank = ['active' => 0, 'partial' => 1, 'inactive' => 2];
         $adapters = $instanceQuery->get()
-            ->map(fn ($i) => \App\SyncAdapters\AdapterRegistry::hydrate($i))
+            ->map(fn ($i) => \App\SyncAdapters\SyncAdapter::factory($i))
             ->filter()
             ->sortBy(fn ($a) => $readinessRank[$a->readinessStatus()] ?? 99)
             ->values()
@@ -939,7 +939,7 @@ class SettingsController extends Controller
         }
 
         $validated = $request->validate([
-            'adapter_type' => 'required|string|in:'.implode(',', \App\SyncAdapters\AdapterRegistry::typeNames()),
+            'adapter_type' => 'required|string|in:'.implode(',', \App\SyncAdapters\SyncAdapter::typeNames()),
             'label' => 'required|string|max:191|unique:sync_adapter_instances,label',
             'company_id' => 'nullable|integer|exists:companies,id',
         ]);

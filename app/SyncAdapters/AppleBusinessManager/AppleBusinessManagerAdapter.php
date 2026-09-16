@@ -76,6 +76,11 @@ class AppleBusinessManagerAdapter extends SyncAdapter
         return 'Apple Business Manager';
     }
 
+    public static function typeSlug(): string
+    {
+        return 'abm';
+    }
+
     /**
      * ABM/ASM base URLs are host-fixed per mode (business or school),
      * so the admin never types a URL. Mode selection in the

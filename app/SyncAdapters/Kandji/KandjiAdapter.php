@@ -23,6 +23,11 @@ class KandjiAdapter extends SyncAdapter implements PushableAdapter
         return 'Kandji';
     }
 
+    public static function typeSlug(): string
+    {
+        return 'kandji';
+    }
+
     public function baseUrlPlaceholder(): ?string
     {
         return 'https://your-subdomain.api.kandji.io';

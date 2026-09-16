@@ -41,6 +41,11 @@ class WorkspaceOneAdapter extends SyncAdapter implements PushableAdapter
         return 'Omnissa Workspace ONE';
     }
 
+    public static function typeSlug(): string
+    {
+        return 'workspace_one';
+    }
+
     public function baseUrlPlaceholder(): ?string
     {
         return 'https://as###.awmdm.com';

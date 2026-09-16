@@ -23,6 +23,11 @@ class OsctrlAdapter extends SyncAdapter
         return 'osctrl';
     }
 
+    public static function typeSlug(): string
+    {
+        return 'osctrl';
+    }
+
     public function settingsSchema(): array
     {
         return [

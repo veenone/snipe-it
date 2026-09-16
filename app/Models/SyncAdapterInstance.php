@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use App\SyncAdapters\AdapterRegistry;
 use App\SyncAdapters\SyncAdapter;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
@@ -56,7 +55,7 @@ class SyncAdapterInstance extends Model
      */
     public function adapter(): ?SyncAdapter
     {
-        return AdapterRegistry::hydrate($this);
+        return SyncAdapter::factory($this);
     }
 
     private static function generateUniqueSlug(string $label): string

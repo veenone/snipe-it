@@ -24,6 +24,11 @@ class MerakiSystemsManagerAdapter extends SyncAdapter
         return 'Meraki Systems Manager';
     }
 
+    public static function typeSlug(): string
+    {
+        return 'meraki_sm';
+    }
+
     public function baseUrlPlaceholder(): ?string
     {
         return 'https://api.meraki.com/api/v1';

@@ -26,6 +26,11 @@ class FleetAdapter extends SyncAdapter
         return 'Fleet';
     }
 
+    public static function typeSlug(): string
+    {
+        return 'fleet';
+    }
+
     public function settingsSchema(): array
     {
         return [

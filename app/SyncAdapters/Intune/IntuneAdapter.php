@@ -35,6 +35,11 @@ class IntuneAdapter extends SyncAdapter implements PushableAdapter
         return 'Microsoft Intune';
     }
 
+    public static function typeSlug(): string
+    {
+        return 'intune';
+    }
+
     public function baseUrlPlaceholder(): ?string
     {
         return 'https://graph.microsoft.com';

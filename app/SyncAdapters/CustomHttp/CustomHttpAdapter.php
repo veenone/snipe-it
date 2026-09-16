@@ -77,6 +77,11 @@ class CustomHttpAdapter extends SyncAdapter implements PushableAdapter
         return 'Custom HTTP';
     }
 
+    public static function typeSlug(): string
+    {
+        return 'custom_http';
+    }
+
     public function settingsSchema(): array
     {
         return [
@@ -354,7 +359,7 @@ class CustomHttpAdapter extends SyncAdapter implements PushableAdapter
     public function validationRules(): array
     {
         $rules = parent::validationRules();
-        $rules[$this->instance->slug . '_extras_definition'] = [
+        $rules[$this->instance->slug.'_extras_definition'] = [
             'nullable',
             'string',
             new \App\Rules\CustomHttpExtrasJsonRule,
@@ -421,7 +426,7 @@ class CustomHttpAdapter extends SyncAdapter implements PushableAdapter
     public function push(Asset $asset, array $changedFields = []): void
     {
         $externalSource = $this->pushPrologue($asset, $changedFields);
-        if ($externalSource === null || !$this->canPush()) {
+        if ($externalSource === null || ! $this->canPush()) {
             return;
         }
 
@@ -434,7 +439,7 @@ class CustomHttpAdapter extends SyncAdapter implements PushableAdapter
         // URL it targets that base URL exactly, which some APIs
         // accept for record-scoped writes when the id is inside the
         // request body rather than the path.
-        $endpoint = rtrim($this->url(), '/') . $this->resolvedPushPath($this->safeCredential('push_path'), (string) $externalSource->external_id);
+        $endpoint = rtrim($this->url(), '/').$this->resolvedPushPath($this->safeCredential('push_path'), (string) $externalSource->external_id);
         $method = $this->resolvedPushMethod();
 
         if ($this->isPushDryRun()) {
@@ -470,7 +475,7 @@ class CustomHttpAdapter extends SyncAdapter implements PushableAdapter
         $touched = [];
         $fieldPaths = $this->fieldPathMap();
         foreach ($this->pushDirectedFields() as $field) {
-            if (!in_array($field, self::PUSHABLE_STANDARD_FIELDS, true)) {
+            if (! in_array($field, self::PUSHABLE_STANDARD_FIELDS, true)) {
                 continue;
             }
             $path = $fieldPaths[$field] ?? '';
@@ -563,8 +568,8 @@ class CustomHttpAdapter extends SyncAdapter implements PushableAdapter
             return '';
         }
         $path = str_replace('{external_id}', rawurlencode($externalId), $template);
-        if (!str_starts_with($path, '/')) {
-            $path = '/' . $path;
+        if (! str_starts_with($path, '/')) {
+            $path = '/'.$path;
         }
 
         return $path;
@@ -609,7 +614,7 @@ class CustomHttpAdapter extends SyncAdapter implements PushableAdapter
         $globalIndex = 0;
         foreach ($this->paginate() as $records) {
             foreach ($records as $record) {
-                if (!is_array($record)) {
+                if (! is_array($record)) {
                     $globalIndex++;
 
                     continue;
@@ -681,7 +686,7 @@ class CustomHttpAdapter extends SyncAdapter implements PushableAdapter
             }
 
             $records = self::dotPathGet($body, $recordsPath);
-            if (!is_array($records)) {
+            if (! is_array($records)) {
                 Log::channel('sync-adapters')->warning(sprintf(
                     '%s pull expected an array at records path "%s", got %s',
                     $this->name(),
@@ -770,10 +775,10 @@ class CustomHttpAdapter extends SyncAdapter implements PushableAdapter
             }
 
             $pullPath = $this->safeCredential('pull_path');
-            if ($pullPath !== '' && !str_starts_with($pullPath, '/')) {
-                $pullPath = '/' . $pullPath;
+            if ($pullPath !== '' && ! str_starts_with($pullPath, '/')) {
+                $pullPath = '/'.$pullPath;
             }
-            $endpoint = $baseUrl . $pullPath;
+            $endpoint = $baseUrl.$pullPath;
         }
 
         $request = Http::acceptJson()->timeout(30);
@@ -896,7 +901,7 @@ class CustomHttpAdapter extends SyncAdapter implements PushableAdapter
 
         $current = $data;
         foreach (explode('.', $path) as $segment) {
-            if (!is_array($current)) {
+            if (! is_array($current)) {
                 return null;
             }
             if (array_key_exists($segment, $current)) {
@@ -921,7 +926,7 @@ class CustomHttpAdapter extends SyncAdapter implements PushableAdapter
         if ($value === null) {
             return null;
         }
-        if (!is_scalar($value)) {
+        if (! is_scalar($value)) {
             return null;
         }
 
@@ -975,7 +980,7 @@ class CustomHttpAdapter extends SyncAdapter implements PushableAdapter
         }
 
         $decoded = json_decode($raw, true);
-        if (!is_array($decoded)) {
+        if (! is_array($decoded)) {
             return $baseline;
         }
 
@@ -1003,13 +1008,13 @@ class CustomHttpAdapter extends SyncAdapter implements PushableAdapter
         }
 
         $decoded = json_decode($raw, true);
-        if (!is_array($decoded)) {
+        if (! is_array($decoded)) {
             return [];
         }
 
         $out = [];
         foreach ($decoded as $entry) {
-            if (!is_array($entry) || !isset($entry['key'], $entry['path'])) {
+            if (! is_array($entry) || ! isset($entry['key'], $entry['path'])) {
                 continue;
             }
             $out[] = [

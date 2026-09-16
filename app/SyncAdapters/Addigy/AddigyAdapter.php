@@ -19,6 +19,11 @@ class AddigyAdapter extends SyncAdapter
         return 'Addigy';
     }
 
+    public static function typeSlug(): string
+    {
+        return 'addigy';
+    }
+
     public function baseUrlPlaceholder(): ?string
     {
         return 'https://prod.addigy.com';

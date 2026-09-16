@@ -40,6 +40,11 @@ class KaseyaVsa10Adapter extends SyncAdapter
         return 'Kaseya VSA 10';
     }
 
+    public static function typeSlug(): string
+    {
+        return 'kaseya_vsa10';
+    }
+
     public function baseUrlPlaceholder(): ?string
     {
         return 'https://your-tenant.vsax.net';

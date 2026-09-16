@@ -20,6 +20,11 @@ class JumpCloudAdapter extends SyncAdapter
         return 'JumpCloud';
     }
 
+    public static function typeSlug(): string
+    {
+        return 'jumpcloud';
+    }
+
     public function baseUrlPlaceholder(): ?string
     {
         return 'https://console.jumpcloud.com/api';
