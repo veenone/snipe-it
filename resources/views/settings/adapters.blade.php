@@ -75,6 +75,7 @@
                                     data-adapter-delete-confirm="{{ $adapterDeleteConfirm }}"
                                     data-adapter-clone-url="{{ route('settings.adapters.clone', $adapter->name()) }}"
                                     data-adapter-clone-label-default="{{ $adapterCloneLabelDefault }}"
+                                    data-breadcrumb-label="{{ $adapter->label() }}"
                                 >
                                     @php
                                         $readiness = $adapter->readinessStatus();
@@ -116,11 +117,11 @@
                              are configured. --}}
                         <li role="presentation" @class(['active' => $selected === null])>
                             <a
-                                href="#adapter-pane-_help"
+                                href="#adapter-pane-help"
                                 role="tab"
                                 data-toggle="tab"
                             >
-                                <x-icon type="tip" class="fa-fw"/>
+                                <x-icon type="tip" class="fa-fw text-info"/>
                                 {{ trans('admin/settings/sync_adapters.help_tab_label') }}
                             </a>
                         </li>
@@ -140,11 +141,13 @@
 
                             <div
                                 role="tabpanel"
-                                id="adapter-pane-_help"
+                                id="adapter-pane-help"
                                 @class(['tab-pane fade', 'active in' => $selected === null])
                             >
                                 <div class="sync-adapters-empty-state">
-                                    <h3>{{ trans('admin/settings/sync_adapters.empty_state_title') }}</h3>
+
+
+                                <h3>{{ trans('admin/settings/sync_adapters.empty_state_title') }}</h3>
                                     <p>{{ trans('admin/settings/sync_adapters.empty_state_intro') }}</p>
                                     <p>{{ trans('admin/settings/sync_adapters.empty_state_supported_intro', ['count' => count($adapterTypes)]) }}</p>
                                     <ul>
@@ -325,6 +328,10 @@
             var cloneModal = document.getElementById('clone-adapter-modal');
             var cloneForm = cloneModal ? cloneModal.querySelector('form') : null;
             var cloneLabelInput = document.getElementById('clone_adapter_label');
+
+            // Breadcrumb append (Sync Adapters > active-tab-label) is
+            // handled globally in snipeit.js off the data-breadcrumb-label
+            // attribute on each tab link.
 
             document.querySelectorAll('.sync-adapters-tabs a[data-toggle="tab"]').forEach(function (tabLink) {
                 $(tabLink).on('shown.bs.tab', function (e) {
