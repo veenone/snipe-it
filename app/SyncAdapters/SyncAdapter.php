@@ -952,7 +952,7 @@ abstract class SyncAdapter
      * shape) branch into nested payload structures rather than
      * writing a literal key with a dot in it.
      *
-     * @param  array<string, mixed>  $payload
+     * @param  array<mixed>  $payload
      * @param  array<int, string>  $touched
      */
     public function applyComposedNotesToPayload(Asset $asset, array &$payload, array &$touched = []): bool

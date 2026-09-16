@@ -8155,6 +8155,12 @@ parameters:
 			path: app/Models/Supplier.php
 
 		-
+			message: '#^Using nullsafe property access "\?\-\>config" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Models/SyncAdapterConfig.php
+
+		-
 			message: '#^Access to an undefined property App\\Models\\Actionlog\:\:\$created_by\.$#'
 			identifier: property.notFound
 			count: 6
@@ -9745,34 +9751,34 @@ parameters:
 			path: app/SyncAdapters/MerakiSystemsManager/MerakiClient.php
 
 		-
+			message: '#^Access to an undefined property App\\Models\\Actionlog\:\:\$created_by\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/SyncAdapters/SyncAdapter.php
+
+		-
 			message: '#^Using nullsafe property access "\?\-\>email" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
 			identifier: nullsafe.neverNull
 			count: 1
-			path: app/SyncAdapters/NotesComposer.php
+			path: app/SyncAdapters/SyncAdapter.php
 
 		-
 			message: '#^Using nullsafe property access "\?\-\>model_number" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
 			identifier: nullsafe.neverNull
 			count: 1
-			path: app/SyncAdapters/NotesComposer.php
+			path: app/SyncAdapters/SyncAdapter.php
 
 		-
 			message: '#^Using nullsafe property access "\?\-\>name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
 			identifier: nullsafe.neverNull
 			count: 7
-			path: app/SyncAdapters/NotesComposer.php
+			path: app/SyncAdapters/SyncAdapter.php
 
 		-
 			message: '#^Using nullsafe property access "\?\-\>username" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
 			identifier: nullsafe.neverNull
 			count: 1
-			path: app/SyncAdapters/NotesComposer.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Actionlog\:\:\$created_by\.$#'
-			identifier: property.notFound
-			count: 3
-			path: app/SyncAdapters/SyncHostFromAdapter.php
+			path: app/SyncAdapters/SyncAdapter.php
 
 		-
 			message: '#^Expression on left side of \?\? is not nullable\.$#'
