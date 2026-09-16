@@ -12,7 +12,7 @@ use Tests\TestCase;
  * encryption cycle is already covered by FleetSettingsPageTest,
  * AddigySettingsPageTest, and IntuneSettingsPageTest for the three
  * distinct schema shapes (single-secret, key-pair, mixed). This test
- * just verifies each new adapter is registered with the AdapterRegistry
+ * just verifies each new adapter is registered with the SyncAdapter::allTypes
  * and its schema-declared labels appear on the settings page.
  */
 class NewBuiltInAdaptersRenderTest extends TestCase
