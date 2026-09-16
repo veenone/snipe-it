@@ -357,6 +357,10 @@ Route::group(['prefix' => 'admin', 'middleware' => ['auth', 'authorize:superuser
         ->name('settings.adapters.refresh_custom_fields')
         ->missing(fn () => abort(404));
 
+    Route::post('adapters/{instance}/clone', [SettingsController::class, 'postCloneAdapterInstance'])
+        ->name('settings.adapters.clone')
+        ->missing(fn () => abort(404));
+
     Route::delete('adapters/{instance}', [SettingsController::class, 'deleteAdapterInstance'])
         ->name('settings.adapters.destroy')
         ->missing(fn () => abort(404));
