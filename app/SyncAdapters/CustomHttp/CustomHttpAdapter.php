@@ -428,16 +428,16 @@ class CustomHttpAdapter extends SyncAdapter implements PushableAdapter
      *
      * @param  array<int, string>  $changedFields
      */
-    public function push(Asset $asset, array $changedFields = []): void
+    public function push(Asset $asset, array $changedFields = []): bool
     {
         $externalSource = $this->pushPrologue($asset, $changedFields);
         if ($externalSource === null || ! $this->canPush()) {
-            return;
+            return false;
         }
 
         [$payload, $touched] = $this->buildPushPayload($asset);
         if ($payload === []) {
-            return;
+            return false;
         }
 
         // Blank push_path is allowed. Combined with a non-blank base
@@ -456,10 +456,12 @@ class CustomHttpAdapter extends SyncAdapter implements PushableAdapter
                 json_encode($payload, JSON_UNESCAPED_SLASHES),
             ));
 
-            return;
+            return true;
         }
 
         $this->dispatchPushRequest($method, $endpoint, $payload, $touched);
+
+        return true;
     }
 
     /**

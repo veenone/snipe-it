@@ -194,23 +194,25 @@ class WorkspaceOneAdapter extends SyncAdapter implements PushableAdapter
      *
      * @param  array<int, string>  $changedFields
      */
-    public function push(Asset $asset, array $changedFields = []): void
+    public function push(Asset $asset, array $changedFields = []): bool
     {
         $externalSource = $this->pushPrologue($asset, $changedFields);
         if ($externalSource === null) {
-            return;
+            return false;
         }
 
         $payload = $this->buildDevicePayload($asset);
         $composedNotes = $this->composeNotesForPush($asset);
 
         if ($payload === [] && $composedNotes === null) {
-            return;
+            return false;
         }
 
         $client = $this->isPushDryRun() ? null : $this->buildClient();
         $this->pushDeviceFields($externalSource->external_id, $payload, $client);
         $this->pushCustomAttribute($externalSource->external_id, $composedNotes, $client);
+
+        return true;
     }
 
     /**

@@ -164,11 +164,11 @@ class MosyleAdapter extends SyncAdapter implements PushableAdapter
      *
      * @param  array<int, string>  $changedFields
      */
-    public function push(Asset $asset, array $changedFields = []): void
+    public function push(Asset $asset, array $changedFields = []): bool
     {
         $externalSource = $this->pushPrologue($asset, $changedFields);
         if ($externalSource === null) {
-            return;
+            return false;
         }
 
         $serial = $asset->serial;
@@ -186,8 +186,16 @@ class MosyleAdapter extends SyncAdapter implements PushableAdapter
             $this->pushComposedNotesField($asset, $serial, $client),
         );
 
-        if ($pushedFields === [] || $this->isPushDryRun()) {
-            return;
+        if ($pushedFields === []) {
+            return false;
+        }
+
+        if ($this->isPushDryRun()) {
+            // Sub-helpers already logged their per-field dry-run lines.
+            // Skip the summary line but count as attempted so the
+            // controller flash reflects that admins actually did the
+            // thing they clicked.
+            return true;
         }
 
         Log::channel('sync-adapters')->info(sprintf(
@@ -196,6 +204,8 @@ class MosyleAdapter extends SyncAdapter implements PushableAdapter
             $serial,
             implode(', ', $pushedFields),
         ));
+
+        return true;
     }
 
     /**

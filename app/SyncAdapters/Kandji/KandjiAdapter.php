@@ -173,11 +173,11 @@ class KandjiAdapter extends SyncAdapter implements PushableAdapter
      *
      * @param  array<int, string>  $changedFields
      */
-    public function push(Asset $asset, array $changedFields = []): void
+    public function push(Asset $asset, array $changedFields = []): bool
     {
         $externalSource = $this->pushPrologue($asset, $changedFields);
         if ($externalSource === null) {
-            return;
+            return false;
         }
 
         $payload = [];
@@ -201,13 +201,15 @@ class KandjiAdapter extends SyncAdapter implements PushableAdapter
         $this->applyComposedNotesToPayload($asset, $payload);
 
         if ($payload === []) {
-            return;
+            return false;
         }
 
         // Dry-run: log the payload we WOULD send and return without
         // hitting Kandji. Lets admins verify their config end-to-end
         // (mapping resolution, direction, credential wiring, external_id
-        // lookup) without a real API call.
+        // lookup) without a real API call. Dry-run counts as a push
+        // attempt from the controller's POV so the flash reflects
+        // that admins actually did the thing they clicked.
         if ($this->isPushDryRun()) {
             Log::channel('sync-adapters')->info(sprintf(
                 '%s push [dry-run]: would PATCH Kandji device %s with %s',
@@ -216,7 +218,7 @@ class KandjiAdapter extends SyncAdapter implements PushableAdapter
                 json_encode($payload, JSON_UNESCAPED_SLASHES),
             ));
 
-            return;
+            return true;
         }
 
         $client = new KandjiClient(baseUrl: $this->url(), token: $this->credential('token'));
@@ -228,6 +230,8 @@ class KandjiAdapter extends SyncAdapter implements PushableAdapter
             $externalSource->external_id,
             implode(', ', array_keys($payload)),
         ));
+
+        return true;
     }
 
     /**

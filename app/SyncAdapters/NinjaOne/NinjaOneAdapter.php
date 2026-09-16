@@ -183,11 +183,11 @@ class NinjaOneAdapter extends SyncAdapter implements PushableAdapter
      *
      * @param  array<int, string>  $changedFields
      */
-    public function push(Asset $asset, array $changedFields = []): void
+    public function push(Asset $asset, array $changedFields = []): bool
     {
         $externalSource = $this->pushPrologue($asset, $changedFields);
         if ($externalSource === null) {
-            return;
+            return false;
         }
 
         $customFieldName = $this->credentialOrNull('asset_tag_custom_field');
@@ -198,12 +198,12 @@ class NinjaOneAdapter extends SyncAdapter implements PushableAdapter
                 $asset->id,
             ));
 
-            return;
+            return false;
         }
 
         $payload = $this->buildCustomFieldPayload($asset, $customFieldName);
         if ($payload === []) {
-            return;
+            return false;
         }
 
         if ($this->isPushDryRun()) {
@@ -214,7 +214,7 @@ class NinjaOneAdapter extends SyncAdapter implements PushableAdapter
                 json_encode($payload, JSON_UNESCAPED_SLASHES),
             ));
 
-            return;
+            return true;
         }
 
         $client = new NinjaOneClient(
@@ -230,6 +230,8 @@ class NinjaOneAdapter extends SyncAdapter implements PushableAdapter
             $externalSource->external_id,
             $customFieldName,
         ));
+
+        return true;
     }
 
     /**

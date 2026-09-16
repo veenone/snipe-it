@@ -186,16 +186,16 @@ class IntuneAdapter extends SyncAdapter implements PushableAdapter
      *
      * @param  array<int, string>  $changedFields
      */
-    public function push(Asset $asset, array $changedFields = []): void
+    public function push(Asset $asset, array $changedFields = []): bool
     {
         $externalSource = $this->pushPrologue($asset, $changedFields);
         if ($externalSource === null) {
-            return;
+            return false;
         }
 
         $composedNotes = $this->composeNotesForPush($asset);
         if ($composedNotes === null) {
-            return;
+            return false;
         }
 
         $payload = [$composedNotes['target'] => $composedNotes['value']];
@@ -208,7 +208,7 @@ class IntuneAdapter extends SyncAdapter implements PushableAdapter
                 json_encode($payload, JSON_UNESCAPED_SLASHES),
             ));
 
-            return;
+            return true;
         }
 
         $graphBaseUrl = $this->url();
@@ -227,5 +227,7 @@ class IntuneAdapter extends SyncAdapter implements PushableAdapter
             $externalSource->external_id,
             $composedNotes['target'],
         ));
+
+        return true;
     }
 }

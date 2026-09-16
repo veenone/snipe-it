@@ -166,11 +166,11 @@ class JamfAdapter extends SyncAdapter implements PushableAdapter
      *
      * @param  array<int, string>  $changedFields
      */
-    public function push(Asset $asset, array $changedFields = []): void
+    public function push(Asset $asset, array $changedFields = []): bool
     {
         $externalSource = $this->pushPrologue($asset, $changedFields);
         if ($externalSource === null) {
-            return;
+            return false;
         }
 
         $payload = [];
@@ -193,7 +193,7 @@ class JamfAdapter extends SyncAdapter implements PushableAdapter
         $this->applyComposedNotesToPayload($asset, $payload, $touched);
 
         if ($payload === []) {
-            return;
+            return false;
         }
 
         if ($this->isPushDryRun()) {
@@ -204,7 +204,7 @@ class JamfAdapter extends SyncAdapter implements PushableAdapter
                 json_encode($payload, JSON_UNESCAPED_SLASHES),
             ));
 
-            return;
+            return true;
         }
 
         $client = new JamfClient(baseUrl: $this->url(), token: $this->credential('token'));
@@ -216,6 +216,8 @@ class JamfAdapter extends SyncAdapter implements PushableAdapter
             $externalSource->external_id,
             implode(', ', $touched),
         ));
+
+        return true;
     }
 
     /**

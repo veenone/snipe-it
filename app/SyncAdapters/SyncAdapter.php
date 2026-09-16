@@ -990,6 +990,20 @@ abstract class SyncAdapter
     }
 
     /**
+     * True when this instance has ANY push configuration in place
+     * (at least one field directed 'push' OR a composed-notes
+     * template + target). Used by the controller's Push Now handler
+     * to abort with a clear error before iterating asset rows when
+     * the admin hit the button on a fresh or incorrectly-configured
+     * adapter, instead of iterating N rows that each silent-no-op
+     * and reporting an inaccurate success.
+     */
+    public function hasPushConfiguration(): bool
+    {
+        return $this->pushDirectedFields() !== [] || $this->hasComposedNotesConfigured();
+    }
+
+    /**
      * Cheap "should we bother trying to push composed notes?" check
      * used by pushPrologue to gate the vendor call without paying
      * the cost of rendering the template. True when the admin has a

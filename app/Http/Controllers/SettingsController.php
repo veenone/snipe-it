@@ -1141,8 +1141,23 @@ class SettingsController extends Controller
         $instance->last_sync_result = $result;
         $instance->save();
 
+        //   at least one seen, no errors -> success (green)
+        //   at least one seen, some errors -> warning (orange, admin should check log)
+        //   nothing seen at all, at least one error -> error (red)
+        //   nothing seen AND no errors -> warning: vendor returned no rows,
+        //     which may be legitimate (empty inventory) but is also the
+        //     canary for a misconfigured pull that silently returned empty.
+        //     Warning flags it for the admin to notice without being a
+        //     hard error, so a genuinely empty vendor doesn't scream red.
+        $flashType = match (true) {
+            $seen > 0 && $errors === 0 => 'success',
+            $seen > 0 && $errors > 0 => 'warning',
+            $seen === 0 && $errors > 0 => 'error',
+            default => 'warning',
+        };
+
         return redirect()->route('settings.adapters.index', ['adapter' => $instance->slug])
-            ->with('success', $result);
+            ->with($flashType, $result);
     }
 
     /**
@@ -1172,16 +1187,27 @@ class SettingsController extends Controller
                 ->with('error', trans('admin/settings/sync_adapters.not_configured'));
         }
 
+        // Nothing to push means the admin has no fields directed 'push'
+        // AND no composed-notes template + target configured. Iterating
+        // asset rows in that state would just silent-no-op through
+        // every one and flash a misleading "Pushed N assets" success.
+        // Fail fast with a message that names the actual gap.
+        if (! $adapter->hasPushConfiguration()) {
+            return redirect()->route('settings.adapters.index', ['adapter' => $instance->slug])
+                ->with('error', trans('admin/settings/sync_adapters.push_nothing_configured'));
+        }
+
         set_time_limit(0);
 
         $pushed = 0;
+        $skipped = 0;
         $errors = 0;
 
         try {
             \App\Models\AssetExternalSource::query()
                 ->where('source', $instance->slug)
                 ->with('asset')
-                ->chunkById(200, function ($rows) use ($adapter, &$pushed, &$errors) {
+                ->chunkById(200, function ($rows) use ($adapter, &$pushed, &$skipped, &$errors) {
                     foreach ($rows as $row) {
                         $asset = $row->asset;
                         if ($asset === null) {
@@ -1189,8 +1215,11 @@ class SettingsController extends Controller
                         }
 
                         try {
-                            $adapter->push($asset);
-                            $pushed++;
+                            if ($adapter->push($asset)) {
+                                $pushed++;
+                            } else {
+                                $skipped++;
+                            }
                         } catch (\Throwable $e) {
                             $errors++;
                             // Log the sanitized summary (short) plus,
@@ -1229,19 +1258,25 @@ class SettingsController extends Controller
                 ]));
         }
 
-        //   all succeeded         -> success (green)
-        //   partial (some failed) -> warning (orange, admin should check log)
-        //   all failed            -> error (red)
-        // Message stays the same either way so admins see the count breakdown.
+        //   at least one push, no failures -> success (green)
+        //   at least one push, some failures -> warning (orange, admin should check log)
+        //   no pushes, at least one failure -> error (red)
+        //   no pushes AND no failures (every row skipped) -> error too, since the
+        //     button did nothing meaningful and the admin should know
+        //   nothing to iterate at all (no matching external_sources) -> warning
+        // Message includes skipped count so admins see the full breakdown.
         $flashType = match (true) {
             $pushed > 0 && $errors === 0 => 'success',
+            $pushed > 0 && $errors > 0 => 'warning',
             $pushed === 0 && $errors > 0 => 'error',
+            $pushed === 0 && $errors === 0 && $skipped > 0 => 'error',
             default => 'warning',
         };
 
         return redirect()->route('settings.adapters.index', ['adapter' => $instance->slug])
             ->with($flashType, trans('admin/settings/sync_adapters.push_complete', [
                 'count' => $pushed,
+                'skipped' => $skipped,
                 'errors' => $errors,
             ]));
     }
