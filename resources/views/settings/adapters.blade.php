@@ -9,24 +9,32 @@
 
     <x-container class="col-sm-10 col-sm-offset-1 col-md-8 col-md-offset-2">
 
-        <x-box>
-            <x-slot:header>
-                <i class="fa-solid fa-network-wired" aria-hidden="true"></i>
-                {{ trans('admin/settings/sync_adapters.title') }} <span class="label label-warning">beta</span>
-            </x-slot:header>
-
-            {{-- Company filter. Reloads the page with ?company=blah so only
-                 adapters scoped to the picked company show in the tab
-                 list. 'shared' filters to adapters with no company_id
-                 (built-ins available to all).  --}}
-            <x-slot:header_right>
-                <form method="GET" action="{{ route('settings.adapters.index') }}" style="display: inline-block;">
+        {{-- Company filter. Reloads the page with ?company=blah so only
+             adapters scoped to the picked company show in the tab list.
+             'shared' filters to adapters with no company_id (available
+             to all). Placed above the box and right-aligned so it lines
+             up with the box's right edge and reads as a view filter
+             rather than a per-adapter setting, without stealing space
+             from either the box's title or the tab strip beneath it.
+             Only rendered when at least one company exists, since on
+             single-tenant installs the filter would only ever show
+             "All" and "Shared" and is pure noise. --}}
+        @if ($hasCompanies)
+            <div class="clearfix sync-adapters-company-filter" style="margin-bottom: 8px;">
+                <form
+                    method="GET"
+                    action="{{ route('settings.adapters.index') }}"
+                    class="form-inline pull-right"
+                >
+                    <label for="adapter-company-filter" style="margin-right: 8px; font-weight: normal;">
+                        {{ trans('admin/settings/sync_adapters.company_filter_prefix') }}
+                    </label>
                     <select
+                        id="adapter-company-filter"
                         name="company"
                         class="select2"
-                        style="width: 220px"
+                        style="width: 220px;"
                         onchange="this.form.submit()"
-                        aria-label="{{ trans('admin/settings/sync_adapters.company_filter_label') }}"
                     >
                         <option value="">{{ trans('admin/settings/sync_adapters.company_filter_all') }}</option>
                         <option value="shared" @selected($selectedCompany === 'shared')>{{ trans('admin/settings/sync_adapters.company_filter_shared') }}</option>
@@ -35,12 +43,28 @@
                         @endforeach
                     </select>
                 </form>
-            </x-slot:header_right>
+            </div>
+        @endif
+
+        <x-box>
+            <x-slot:header>
+                <i class="fa-solid fa-network-wired" aria-hidden="true"></i>
+                {{ trans('admin/settings/sync_adapters.title') }} <span class="label label-warning">beta</span>
+            </x-slot:header>
 
             <div class="sync-adapters-tabs">
                 <div class="adapter-tab-list">
                     <ul class="nav nav-pills nav-stacked" role="tablist">
                         @foreach ($adapters as $adapter)
+                            @php
+                                $adapterSyncedCount = $syncedCounts[$adapter->name()] ?? 0;
+                                $adapterDeleteConfirm = trans_choice(
+                                    'admin/settings/sync_adapters.delete_confirm_count',
+                                    $adapterSyncedCount,
+                                    ['count' => $adapterSyncedCount],
+                                );
+                                $adapterCloneLabelDefault = trans('admin/settings/sync_adapters.clone_label_default', ['label' => $adapter->label()]);
+                            @endphp
                             <li role="presentation" @class(['active' => $selected?->name() === $adapter->name()])>
                                 <a
                                     href="#adapter-pane-{{ $adapter->name() }}"
@@ -48,7 +72,9 @@
                                     data-toggle="tab"
                                     data-adapter-name="{{ $adapter->name() }}"
                                     data-adapter-destroy-url="{{ route('settings.adapters.destroy', $adapter->name()) }}"
-                                    data-adapter-built-in="{{ $adapter->isBuiltIn() ? '1' : '0' }}"
+                                    data-adapter-delete-confirm="{{ $adapterDeleteConfirm }}"
+                                    data-adapter-clone-url="{{ route('settings.adapters.clone', $adapter->name()) }}"
+                                    data-adapter-clone-label-default="{{ $adapterCloneLabelDefault }}"
                                 >
                                     @php
                                         $readiness = $adapter->readinessStatus();
@@ -78,8 +104,24 @@
                                 data-toggle="modal"
                                 data-target="#add-adapter-modal"
                             >
-                                <x-icon type="create"/>
+                                <x-icon type="create" class="fa-fw"/>
                                 {{ trans('admin/settings/sync_adapters.add_button') }}
+                            </a>
+                        </li>
+
+                        {{-- Help tab. Real tab-pane below. Always available so
+                             admins can revisit the getting-started copy and
+                             the list of shipped adapter types after their
+                             first setup. Default-active when no adapters
+                             are configured. --}}
+                        <li role="presentation" @class(['active' => $selected === null])>
+                            <a
+                                href="#adapter-pane-_help"
+                                role="tab"
+                                data-toggle="tab"
+                            >
+                                <x-icon type="tip" class="fa-fw"/>
+                                {{ trans('admin/settings/sync_adapters.help_tab_label') }}
                             </a>
                         </li>
                     </ul>
@@ -95,6 +137,40 @@
                                 <x-sync-adapter.credentials :adapter="$adapter" />
                             </div>
                         @endforeach
+
+                            <div
+                                role="tabpanel"
+                                id="adapter-pane-_help"
+                                @class(['tab-pane fade', 'active in' => $selected === null])
+                            >
+                                <div class="sync-adapters-empty-state">
+                                    <h3>{{ trans('admin/settings/sync_adapters.empty_state_title') }}</h3>
+                                    <p>{{ trans('admin/settings/sync_adapters.empty_state_intro') }}</p>
+                                    <p>{{ trans('admin/settings/sync_adapters.empty_state_supported_intro', ['count' => count($adapterTypes)]) }}</p>
+                                    <ul>
+                                        @foreach ($adapterTypes as $slug => $label)
+                                            <li>{{ $label }}</li>
+                                        @endforeach
+                                    </ul>
+                                    <p>{{ trans('admin/settings/sync_adapters.empty_state_cta') }}</p>
+                                    <p>
+                                        <button
+                                            type="button"
+                                            class="btn btn-primary"
+                                            data-toggle="modal"
+                                            data-target="#add-adapter-modal"
+                                        >
+                                            <x-icon type="create"/>
+                                            {{ trans('admin/settings/sync_adapters.add_button') }}
+                                        </button>
+                                    </p>
+
+                                    <h4>{{ trans('admin/settings/sync_adapters.empty_state_company_title') }}</h4>
+                                    <p>{{ trans('admin/settings/sync_adapters.empty_state_company_intro') }}</p>
+                                    <p>{{ trans('admin/settings/sync_adapters.empty_state_company_filter_note') }}</p>
+                                    <p>{{ trans('admin/settings/sync_adapters.empty_state_company_clone_note') }}</p>
+                                </div>
+                            </div>
                     </div>
                 </div>
             </div>
@@ -103,6 +179,14 @@
                 <div class="box-footer">
                     <div class="row">
                         <div class="text-left col-md-6">
+                            @php
+                                $selectedSyncedCount = $selected ? ($syncedCounts[$selected->name()] ?? 0) : 0;
+                                $selectedDeleteConfirm = trans_choice(
+                                    'admin/settings/sync_adapters.delete_confirm_count',
+                                    $selectedSyncedCount,
+                                    ['count' => $selectedSyncedCount],
+                                );
+                            @endphp
                             <button
                                 id="adapter-delete-trigger"
                                 type="button"
@@ -111,14 +195,27 @@
                                 data-target="#dataConfirmModal"
                                 data-href="{{ $selected ? route('settings.adapters.destroy', $selected->name()) : '' }}"
                                 data-title="{{ trans('admin/settings/sync_adapters.delete_button') }}"
-                                data-content="{{ trans('admin/settings/sync_adapters.delete_confirm') }}"
+                                data-content="{{ $selectedDeleteConfirm }}"
                                 data-icon="fa fa-trash"
-                                style="{{ $selected && ! $selected->isBuiltIn() ? '' : 'display: none;' }}"
+                                style="{{ $selected ? '' : 'display: none;' }}"
                                 onclick="return false;"
                                 @disabled(config('app.lock_passwords') === true)
                             >
                                 <x-icon type="delete"/>
                                 {{ trans('admin/settings/sync_adapters.delete_button') }}
+                            </button>
+
+                            <button
+                                id="adapter-clone-trigger"
+                                type="button"
+                                class="btn btn-info"
+                                data-toggle="modal"
+                                data-target="#clone-adapter-modal"
+                                style="{{ $selected ? '' : 'display: none;' }}"
+                                @disabled(config('app.lock_passwords') === true)
+                            >
+                                <x-icon type="clone"/>
+                                {{ trans('admin/settings/sync_adapters.clone_button') }}
                             </button>
                         </div>
                         <div class="text-right col-md-6">
@@ -127,6 +224,7 @@
                                 class="btn-success"
                                 form="adapter-form-{{ $selected?->name() }}"
                                 :disabled="config('app.lock_passwords') === true"
+                                :style="$selected ? '' : 'display: none;'"
                             />
                         </div>
                     </div>
@@ -178,38 +276,110 @@
         />
     </x-modals>
 
+    {{-- Clone-adapter modal. The form action + prefilled label switch
+         per-active-tab via the tab-switch JS below so a single modal
+         serves every adapter. New instance starts inactive and blank
+         on company so the admin makes deliberate choices before
+         turning it on. --}}
+    <x-modals
+        id="clone-adapter-modal"
+        :title="trans('admin/settings/sync_adapters.clone_modal_title')"
+        :action="$selected ? route('settings.adapters.clone', $selected->name()) : '#'"
+    >
+        <x-form.row
+            :label="trans('admin/settings/sync_adapters.add_label_label')"
+            name="label"
+            input_div_class="col-md-8"
+            :help_text="trans('admin/settings/sync_adapters.clone_label_help')"
+        >
+            <x-slot:input>
+                <x-input.text
+                    name="label"
+                    id="clone_adapter_label"
+                    :value="$selected ? trans('admin/settings/sync_adapters.clone_label_default', ['label' => $selected->label()]) : ''"
+                    required
+                />
+            </x-slot:input>
+        </x-form.row>
+
+        <x-input.company-select
+            name="company_id"
+            id="modal_adapter_clone_company_id_select"
+            :label="trans('admin/settings/sync_adapters.add_company_label')"
+            :selected="null"
+            hideNewButton
+        />
+    </x-modals>
+
     <script>
         // Point Save + Sync Now at the newly-active tab's form when the
         // user switches adapters. Sync Now lives per-pane in
         // the sync-adapter-panel component, so it needs no cross-tab
-        // wiring here.
+        // wiring here. The help tab is a real tab but not an adapter,
+        // so Save + Delete hide when it's active (detected via absence
+        // of a destroy-url data attribute).
         document.addEventListener('DOMContentLoaded', function () {
             var saveBtn = document.getElementById('adapter-save-button');
             var deleteTrigger = document.getElementById('adapter-delete-trigger');
+            var cloneTrigger = document.getElementById('adapter-clone-trigger');
+            var cloneModal = document.getElementById('clone-adapter-modal');
+            var cloneForm = cloneModal ? cloneModal.querySelector('form') : null;
+            var cloneLabelInput = document.getElementById('clone_adapter_label');
 
             document.querySelectorAll('.sync-adapters-tabs a[data-toggle="tab"]').forEach(function (tabLink) {
                 $(tabLink).on('shown.bs.tab', function (e) {
                     var name = e.target.getAttribute('data-adapter-name');
                     var destroyUrl = e.target.getAttribute('data-adapter-destroy-url');
-                    var builtIn = e.target.getAttribute('data-adapter-built-in') === '1';
-
-                    saveBtn.setAttribute('form', 'adapter-form-' + name);
-
-                    if (builtIn) {
-                        deleteTrigger.style.display = 'none';
-                    }
-                    else {
-                        deleteTrigger.style.display = '';
-                        deleteTrigger.setAttribute('data-href', destroyUrl);
-                    }
 
                     // Sync the ?adapter= query param with the visible
-                    // tab so refresh + bookmark land the admin back on
-                    // the same adapter. Uses replaceState (not pushState)
-                    // so browser back doesn't fill history with one
-                    // entry per tab click.
+                    // tab so refresh + bookmark land the admin back
+                    // on the same adapter. Uses replaceState (not
+                    // pushState) so browser back doesn't fill history
+                    // with one entry per tab click. Non-adapter tabs
+                    // (help) drop the param entirely rather than leave
+                    // a stale value from whichever adapter was last on.
+                    // The tab-pane hash BS3 leaves behind gets stripped
+                    // so shareable URLs stay clean (initial tab activation
+                    // is server-driven, not hash-driven).
                     var url = new URL(window.location.href);
-                    url.searchParams.set('adapter', name);
+                    url.hash = '';
+
+                    if (destroyUrl) {
+                        saveBtn.style.display = '';
+                        saveBtn.setAttribute('form', 'adapter-form-' + name);
+                        deleteTrigger.style.display = '';
+                        deleteTrigger.setAttribute('data-href', destroyUrl);
+                        var confirmMsg = e.target.getAttribute('data-adapter-delete-confirm');
+                        if (confirmMsg) {
+                            deleteTrigger.setAttribute('data-content', confirmMsg);
+                        }
+
+                        // Retarget the clone modal at the newly-active
+                        // adapter and reset the label input to the
+                        // pre-baked "Copy of {label}" default.
+                        var cloneUrl = e.target.getAttribute('data-adapter-clone-url');
+                        var cloneLabelDefault = e.target.getAttribute('data-adapter-clone-label-default');
+                        if (cloneTrigger) {
+                            cloneTrigger.style.display = '';
+                        }
+                        if (cloneForm && cloneUrl) {
+                            cloneForm.setAttribute('action', cloneUrl);
+                        }
+                        if (cloneLabelInput && cloneLabelDefault) {
+                            cloneLabelInput.value = cloneLabelDefault;
+                        }
+
+                        url.searchParams.set('adapter', name);
+                    }
+                    else {
+                        saveBtn.style.display = 'none';
+                        deleteTrigger.style.display = 'none';
+                        if (cloneTrigger) {
+                            cloneTrigger.style.display = 'none';
+                        }
+                        url.searchParams.delete('adapter');
+                    }
+
                     window.history.replaceState(null, '', url.toString());
                 });
             });
