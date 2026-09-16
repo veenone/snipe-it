@@ -9,7 +9,7 @@ use Carbon\CarbonInterface;
  * the host-inventory ingestion pipeline. Adapters convert vendor-specific
  * payloads into this shape, the sync action reads only this shape.
  */
-final readonly class HostInventoryRecord
+readonly class HostInventoryRecord
 {
     /**
      * @param  array<string, mixed>  $extra  source-specific data that per-adapter
