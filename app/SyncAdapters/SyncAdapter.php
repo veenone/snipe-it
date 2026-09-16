@@ -2,6 +2,8 @@
 
 namespace App\SyncAdapters;
 
+use App\Models\Asset;
+use App\Models\CustomField;
 use App\Models\SyncAdapterConfig;
 use App\Models\SyncAdapterInstance;
 use App\Rules\ExternalUrl;
@@ -744,51 +746,46 @@ abstract class SyncAdapter
     }
 
     /**
-     * Template string admins configure to compose a single-field
-     * notes blob from many Snipe-IT fields (asset_tag + status +
-     * assigned_to + custom fields, etc.). PushableAdapter
-     * implementations render this via NotesComposer and push the
-     * result to their vendor's notes-shape field. Empty string
-     * means "don't push notes."
+     * Valid placeholder keys for the composed-notes push template.
+     * Admins wrap these tokens in {curly-braces} inside their
+     * push_notes_template to build a single-field notes blob from
+     * many Snipe-IT fields. `{custom.Field Name}` accesses any
+     * CustomField by its exact display name (case-sensitive).
+     * Unknown placeholders and null values render as empty so a
+     * template referencing missing fields degrades gracefully.
+     *
+     * Admin-facing descriptions of each placeholder live in the
+     * `push_notes_template_help` translation, not here, so the
+     * catalog stays translator-friendly.
+     *
+     * @var array<int, string>
      */
-    public function pushNotesTemplate(): string
-    {
-        return (string) SyncAdapterConfig::get($this->instance->id, 'push_notes_template');
-    }
-
-    /**
-     * Admin-configured vendor field name (or dotted path) for the
-     * composed notes push. Blank = fall back to the adapter's
-     * suggested default via PushableAdapter::notesFieldTarget().
-     * Set this when the vendor exposes multiple candidate targets
-     * (Custom Attribute name for WS1, Custom Field name for
-     * NinjaOne, alternative path for Jamf, etc.).
-     */
-    public function pushNotesTargetOverride(): ?string
-    {
-        $stored = (string) SyncAdapterConfig::get($this->instance->id, 'push_notes_target');
-
-        return $stored === '' ? null : $stored;
-    }
-
-    /**
-     * Effective vendor field for composed notes: the admin's
-     * override if set, else the adapter's suggested default via
-     * PushableAdapter::notesFieldTarget(). Returns null when
-     * neither is set (adapter doesn't expose a notes concept AND
-     * admin didn't name a target field).
-     */
-    public function effectiveNotesTarget(): ?string
-    {
-        $override = $this->pushNotesTargetOverride();
-        if ($override !== null) {
-            return $override;
-        }
-
-        return $this instanceof \App\SyncAdapters\PushableAdapter
-            ? $this->notesFieldTarget()
-            : null;
-    }
+    public const NOTES_TEMPLATE_PLACEHOLDERS = [
+        'asset_tag',
+        'name',
+        'serial',
+        'model',
+        'model_number',
+        'manufacturer',
+        'category',
+        'status',
+        'status_type',
+        'assigned_to',
+        'assigned_to_email',
+        'assigned_to_username',
+        'location',
+        'company',
+        'supplier',
+        'last_checkout',
+        'last_checkin',
+        'expected_checkin',
+        'notes',
+        'order_number',
+        'purchase_date',
+        'purchase_cost',
+        'warranty_months',
+        'warranty_expires',
+    ];
 
     public function directionFor(string $field): string
     {
@@ -837,10 +834,10 @@ abstract class SyncAdapter
      *
      * @param  array<int, string>  $changedFields
      */
-    public function pushPrologue(\App\Models\Asset $asset, array $changedFields): ?\App\Models\AssetExternalSource
+    public function pushPrologue(Asset $asset, array $changedFields): ?\App\Models\AssetExternalSource
     {
         $pushFields = $this->pushDirectedFields();
-        $notesConfigured = $this->pushNotesTemplate() !== '' && $this->effectiveNotesTarget() !== null;
+        $notesConfigured = $this->hasComposedNotesConfigured();
 
         if ($pushFields === [] && ! $notesConfigured) {
             return null;
@@ -858,20 +855,171 @@ abstract class SyncAdapter
     }
 
     /**
-     * Render the composed-notes template against the given asset via
-     * NotesComposer, or return an empty string when the template or
-     * target isn't configured. Adapters call this and check for '' to
-     * decide whether to include composed notes in their push payload.
+     * Composed notes payload for a push, or null when nothing to
+     * push. Reads the admin's push_notes_template from config,
+     * resolves the target vendor field (admin override or
+     * PushableAdapter::notesFieldTarget() default), then substitutes
+     * every {placeholder} against the given asset.
+     *
+     * Placeholders are enumerated in NOTES_TEMPLATE_PLACEHOLDERS.
+     * `{custom.Field Name}` resolves any CustomField by exact
+     * display name. Unknown keys and null values render as empty,
+     * so a template referencing missing fields degrades gracefully
+     * instead of throwing.
+     *
+     * Adapter push() implementations call this and check for null:
+     * non-null returns give both the vendor field name (`target`)
+     * and the rendered string (`value`), so the caller can splice
+     * both into its payload in one hit.
+     *
+     * @return array{target: string, value: string}|null
      */
-    public function composeNotesForPush(\App\Models\Asset $asset): string
+    public function composeNotesForPush(Asset $asset): ?array
     {
-        $template = $this->pushNotesTemplate();
-        $target = $this->effectiveNotesTarget();
-        if ($template === '' || $target === null) {
-            return '';
+        $template = (string) SyncAdapterConfig::get($this->instance->id, 'push_notes_template');
+        if (trim($template) === '') {
+            return null;
         }
 
-        return NotesComposer::compose($asset, $template);
+        $target = $this->resolveComposedNotesTarget();
+        if ($target === null) {
+            return null;
+        }
+
+        // Match anything between braces that isn't itself a brace.
+        // Permissive so custom-field names with spaces or punctuation
+        // ({custom.Cost Center}, {custom.Warranty (extended)}) match
+        // cleanly. The inner match block below decides validity.
+        $value = preg_replace_callback(
+            '/\{([^{}]+)\}/',
+            function (array $m) use ($asset): string {
+                $key = $m[1];
+
+                if (str_starts_with($key, 'custom.')) {
+                    $field = CustomField::query()->where('name', substr($key, 7))->first();
+                    if ($field === null || $field->db_column === null) {
+                        return '';
+                    }
+                    $stored = $asset->getAttribute($field->db_column);
+
+                    return $stored === null ? '' : (string) $stored;
+                }
+
+                return match ($key) {
+                    'asset_tag' => (string) ($asset->asset_tag ?? ''),
+                    'name' => (string) ($asset->name ?? ''),
+                    'serial' => (string) ($asset->serial ?? ''),
+                    'model' => (string) ($asset->model?->name ?? ''),
+                    'model_number' => (string) ($asset->model?->model_number ?? ''),
+                    'manufacturer' => (string) ($asset->model?->manufacturer?->name ?? ''),
+                    'category' => (string) ($asset->model?->category?->name ?? ''),
+                    'status' => (string) ($asset->status?->name ?? ''),
+                    'status_type' => (string) ($asset->status?->getStatuslabelType() ?? ''),
+                    'assigned_to' => (string) ($asset->assignedTo?->present()?->name() ?? ''),
+                    'assigned_to_email' => (string) ($asset->assignedTo?->email ?? ''),
+                    'assigned_to_username' => (string) ($asset->assignedTo?->username ?? ''),
+                    'location' => (string) ($asset->location?->name ?? ''),
+                    'company' => (string) ($asset->company?->name ?? ''),
+                    'supplier' => (string) ($asset->supplier?->name ?? ''),
+                    'last_checkout' => (string) ($asset->last_checkout ?? ''),
+                    'last_checkin' => (string) ($asset->last_checkin ?? ''),
+                    'expected_checkin' => (string) ($asset->expected_checkin ?? ''),
+                    'notes' => (string) ($asset->notes ?? ''),
+                    'order_number' => (string) ($asset->order_number ?? ''),
+                    'purchase_date' => (string) ($asset->purchase_date ?? ''),
+                    'purchase_cost' => (string) ($asset->purchase_cost ?? ''),
+                    'warranty_months' => (string) ($asset->warranty_months ?? ''),
+                    'warranty_expires' => (string) ($asset->warranty_expires ?? ''),
+                    default => '',
+                };
+            },
+            $template,
+        ) ?? '';
+
+        return ['target' => $target, 'value' => $value];
+    }
+
+    /**
+     * Splice the composed-notes payload (from composeNotesForPush)
+     * into an outgoing vendor payload. Returns true when composed
+     * notes were configured and spliced, false when there was
+     * nothing to send. Callers that track which fields they pushed
+     * (for post-push logging or event dispatch) pass their $touched
+     * array by reference. The target field name gets appended to
+     * it on success.
+     *
+     * Uses Arr::set so dotted target paths (Jamf's "general.notes"
+     * shape) branch into nested payload structures rather than
+     * writing a literal key with a dot in it.
+     *
+     * @param  array<string, mixed>  $payload
+     * @param  array<int, string>  $touched
+     */
+    public function applyComposedNotesToPayload(Asset $asset, array &$payload, array &$touched = []): bool
+    {
+        $composedNotes = $this->composeNotesForPush($asset);
+        if ($composedNotes === null) {
+            return false;
+        }
+
+        \Illuminate\Support\Arr::set($payload, $composedNotes['target'], $composedNotes['value']);
+        $touched[] = $composedNotes['target'];
+
+        return true;
+    }
+
+    /**
+     * Stored composed-notes template + target-override, exposed for
+     * the settings-page form so it can pre-fill the two inputs.
+     * Runtime callers use composeNotesForPush() instead, which
+     * resolves the effective target (falling back to
+     * PushableAdapter::notesFieldTarget()) and does the substitution
+     * in one hit.
+     *
+     * @return array{template: string, target_override: ?string}
+     */
+    public function storedPushNotesConfig(): array
+    {
+        $template = (string) SyncAdapterConfig::get($this->instance->id, 'push_notes_template');
+        $target = (string) SyncAdapterConfig::get($this->instance->id, 'push_notes_target');
+
+        return [
+            'template' => $template,
+            'target_override' => $target === '' ? null : $target,
+        ];
+    }
+
+    /**
+     * Cheap "should we bother trying to push composed notes?" check
+     * used by pushPrologue to gate the vendor call without paying
+     * the cost of rendering the template. True when the admin has a
+     * non-blank push_notes_template AND a resolvable target field.
+     */
+    private function hasComposedNotesConfigured(): bool
+    {
+        $template = (string) SyncAdapterConfig::get($this->instance->id, 'push_notes_template');
+
+        return trim($template) !== '' && $this->resolveComposedNotesTarget() !== null;
+    }
+
+    /**
+     * Vendor field name for the composed-notes push. Admin's
+     * override (push_notes_target config key) wins if set. Falls
+     * back to the adapter's suggested default via
+     * PushableAdapter::notesFieldTarget(). Null when neither is
+     * set (adapter has no notes concept AND admin didn't name a
+     * target field).
+     */
+    private function resolveComposedNotesTarget(): ?string
+    {
+        $stored = (string) SyncAdapterConfig::get($this->instance->id, 'push_notes_target');
+        if ($stored !== '') {
+            return $stored;
+        }
+
+        return $this instanceof PushableAdapter
+            ? $this->notesFieldTarget()
+            : null;
     }
 
     /**

@@ -527,9 +527,12 @@
                 :help_text="trans('admin/settings/sync_adapters.push_notes_target_help')"
             >
                 <x-slot:input>
+                    @php
+                        $storedNotesConfig = $adapter->storedPushNotesConfig();
+                    @endphp
                     <x-input.text
                         :name="$slug . '_push_notes_target'"
-                        :value="old($slug . '_push_notes_target', $adapter->pushNotesTargetOverride() ?? '')"
+                        :value="old($slug . '_push_notes_target', $storedNotesConfig['target_override'] ?? '')"
                         :placeholder="$adapter->notesFieldTarget() ?? trans('admin/settings/sync_adapters.push_notes_target_placeholder_none')"
                         :disabled="$locked"
                     />
@@ -549,7 +552,7 @@
                         rows="6"
                         @disabled($locked)
                         style="font-family: monospace; white-space: pre;"
-                    >{{ old($slug . '_push_notes_template', $adapter->pushNotesTemplate()) }}</textarea>
+                    >{{ old($slug . '_push_notes_template', $storedNotesConfig['template']) }}</textarea>
                 </x-slot:input>
             </x-form.row>
         </fieldset>

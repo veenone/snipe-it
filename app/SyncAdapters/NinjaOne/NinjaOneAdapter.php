@@ -253,10 +253,7 @@ class NinjaOneAdapter extends SyncAdapter implements PushableAdapter
             $payload[$assetTagFieldName] = $value;
         }
 
-        $composed = $this->composeNotesForPush($asset);
-        if ($composed !== '') {
-            $payload[$this->effectiveNotesTarget()] = $composed;
-        }
+        $this->applyComposedNotesToPayload($asset, $payload);
 
         return $payload;
     }

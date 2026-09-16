@@ -495,14 +495,7 @@ class CustomHttpAdapter extends SyncAdapter implements PushableAdapter
             $touched[] = $path;
         }
 
-        $composed = $this->composeNotesForPush($asset);
-        if ($composed !== '') {
-            $notesTarget = $this->effectiveNotesTarget();
-            if ($notesTarget !== null) {
-                Arr::set($payload, $notesTarget, $composed);
-                $touched[] = $notesTarget;
-            }
-        }
+        $this->applyComposedNotesToPayload($asset, $payload, $touched);
 
         return [$payload, $touched];
     }

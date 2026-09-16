@@ -193,12 +193,12 @@ class IntuneAdapter extends SyncAdapter implements PushableAdapter
             return;
         }
 
-        $composed = $this->composeNotesForPush($asset);
-        if ($composed === '') {
+        $composedNotes = $this->composeNotesForPush($asset);
+        if ($composedNotes === null) {
             return;
         }
 
-        $payload = [$this->effectiveNotesTarget() => $composed];
+        $payload = [$composedNotes['target'] => $composedNotes['value']];
 
         if ($this->isPushDryRun()) {
             Log::channel('sync-adapters')->info(sprintf(
@@ -225,7 +225,7 @@ class IntuneAdapter extends SyncAdapter implements PushableAdapter
             '%s push: updated Intune managed device %s (%s)',
             $this->name(),
             $externalSource->external_id,
-            $this->effectiveNotesTarget(),
+            $composedNotes['target'],
         ));
     }
 }

@@ -202,15 +202,15 @@ class WorkspaceOneAdapter extends SyncAdapter implements PushableAdapter
         }
 
         $payload = $this->buildDevicePayload($asset);
-        $composed = $this->composeNotesForPush($asset);
+        $composedNotes = $this->composeNotesForPush($asset);
 
-        if ($payload === [] && $composed === '') {
+        if ($payload === [] && $composedNotes === null) {
             return;
         }
 
         $client = $this->isPushDryRun() ? null : $this->buildClient();
         $this->pushDeviceFields($externalSource->external_id, $payload, $client);
-        $this->pushCustomAttribute($externalSource->external_id, $composed, $client);
+        $this->pushCustomAttribute($externalSource->external_id, $composedNotes, $client);
     }
 
     /**
@@ -275,31 +275,32 @@ class WorkspaceOneAdapter extends SyncAdapter implements PushableAdapter
      * /devices/{uuid}/customattributes. Separate endpoint from the
      * top-level device fields, so this fires independently.
      */
-    private function pushCustomAttribute(string $uuid, string $composed, ?WorkspaceOneClient $client): void
+    /**
+     * @param  array{target: string, value: string}|null  $composedNotes
+     */
+    private function pushCustomAttribute(string $uuid, ?array $composedNotes, ?WorkspaceOneClient $client): void
     {
-        if ($composed === '') {
+        if ($composedNotes === null) {
             return;
         }
-
-        $notesTarget = $this->effectiveNotesTarget();
 
         if ($client === null) {
             Log::channel('sync-adapters')->info(sprintf(
                 '%s push [dry-run]: would set Workspace ONE Custom Attribute %s=%s on device %s',
                 $this->name(),
-                $notesTarget,
-                $composed,
+                $composedNotes['target'],
+                $composedNotes['value'],
                 $uuid,
             ));
 
             return;
         }
 
-        $client->updateDeviceCustomAttribute($uuid, $notesTarget, $composed);
+        $client->updateDeviceCustomAttribute($uuid, $composedNotes['target'], $composedNotes['value']);
         Log::channel('sync-adapters')->info(sprintf(
             '%s push: set Workspace ONE Custom Attribute "%s" on device %s',
             $this->name(),
-            $notesTarget,
+            $composedNotes['target'],
             $uuid,
         ));
     }

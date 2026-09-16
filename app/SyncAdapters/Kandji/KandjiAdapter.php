@@ -151,9 +151,9 @@ class KandjiAdapter extends SyncAdapter implements PushableAdapter
     /**
      * Kandji devices carry a single freeform `notes` field that
      * admins commonly repurpose for composed asset info from
-     * Snipe-IT. When pushNotesTemplate() is set, we render it and
-     * PATCH the notes field alongside any other push-directed
-     * fields.
+     * Snipe-IT. When the admin has set a push_notes_template we
+     * render it via composeNotesForPush() and PATCH the notes field
+     * alongside any other push-directed fields.
      */
     public function notesFieldTarget(): ?string
     {
@@ -195,14 +195,10 @@ class KandjiAdapter extends SyncAdapter implements PushableAdapter
             $payload[$mapped] = $value;
         }
 
-        // Composed notes: template + effectiveNotesTarget (admin
-        // override or adapter default) merge into the same payload
-        // so admins can push both an asset_tag AND a composed notes
-        // blob in a single API call.
-        $composed = $this->composeNotesForPush($asset);
-        if ($composed !== '') {
-            $payload[$this->effectiveNotesTarget()] = $composed;
-        }
+        // Composed notes merge into the same payload so admins can
+        // push both an asset_tag AND a composed notes blob in a
+        // single API call.
+        $this->applyComposedNotesToPayload($asset, $payload);
 
         if ($payload === []) {
             return;

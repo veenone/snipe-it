@@ -190,12 +190,7 @@ class JamfAdapter extends SyncAdapter implements PushableAdapter
             $touched[] = $path;
         }
 
-        $composed = $this->composeNotesForPush($asset);
-        if ($composed !== '') {
-            $notesTarget = $this->effectiveNotesTarget();
-            Arr::set($payload, $notesTarget, $composed);
-            $touched[] = $notesTarget;
-        }
+        $this->applyComposedNotesToPayload($asset, $payload, $touched);
 
         if ($payload === []) {
             return;

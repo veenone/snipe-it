@@ -244,8 +244,8 @@ class MosyleAdapter extends SyncAdapter implements PushableAdapter
      */
     private function pushComposedNotesField(Asset $asset, string $serial, ?MosyleClient &$client): array
     {
-        $composed = $this->composeNotesForPush($asset);
-        if ($composed === '') {
+        $composedNotes = $this->composeNotesForPush($asset);
+        if ($composedNotes === null) {
             return [];
         }
 
@@ -254,14 +254,14 @@ class MosyleAdapter extends SyncAdapter implements PushableAdapter
                 '%s push [dry-run]: would set Mosyle device serial=%s notes=%s',
                 $this->name(),
                 $serial,
-                $composed,
+                $composedNotes['value'],
             ));
 
             return ['notes'];
         }
 
         $client ??= new MosyleClient(baseUrl: $this->url(), token: $this->credential('token'));
-        $client->updateDeviceNotesBySerial($serial, $composed);
+        $client->updateDeviceNotesBySerial($serial, $composedNotes['value']);
 
         return ['notes'];
     }

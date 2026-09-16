@@ -37,8 +37,8 @@ interface PushableAdapter
      * when the vendor has no such field (or when routing composed
      * notes would be a semantic stretch, e.g. hostname).
      *
-     * Push implementations render pushNotesTemplate() through
-     * NotesComposer and set the composed string on this field's
+     * Push implementations call SyncAdapter::composeNotesForPush()
+     * and set the returned ['value'] on the returned ['target']
      * position in the outgoing payload.
      */
     public function notesFieldTarget(): ?string;
