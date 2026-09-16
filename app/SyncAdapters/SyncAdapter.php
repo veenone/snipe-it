@@ -815,6 +815,32 @@ abstract class SyncAdapter
     }
 
     /**
+     * Resolve one of the standard source-field names (hostname,
+     * asset_tag, serial, model, notes, etc.) to the matching value
+     * on the asset. Push implementations call this when building
+     * their outgoing payload so every adapter reads Snipe-IT values
+     * the same way. Returns null for unknown source-field names,
+     * for extras (vendor-specific keys the base class can't map),
+     * or when the asset has no value for that field.
+     *
+     * Adapters with a vendor-specific extra that needs pushing
+     * override in the subclass, call parent for the standard fields,
+     * and handle the vendor-specific keys in the child branch.
+     */
+    protected function assetValueForSourceField(Asset $asset, string $field): mixed
+    {
+        return match ($field) {
+            'hostname' => $asset->name,
+            'name' => $asset->name,
+            'serial' => $asset->serial,
+            'asset_tag' => $asset->asset_tag,
+            'model' => $asset->model?->name,
+            'notes' => $asset->notes,
+            default => null,
+        };
+    }
+
+    /**
      * Shared prologue for every PushableAdapter::push() implementation.
      * Runs the three identical guards each adapter's push() started with
      * and returns the AssetExternalSource row when the push should

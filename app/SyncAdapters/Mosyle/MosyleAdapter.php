@@ -275,12 +275,4 @@ class MosyleAdapter extends SyncAdapter implements PushableAdapter
 
         return ['notes'];
     }
-
-    private function assetValueForSourceField(Asset $asset, string $field): mixed
-    {
-        return match ($field) {
-            'asset_tag' => $asset->asset_tag,
-            default => null,
-        };
-    }
 }

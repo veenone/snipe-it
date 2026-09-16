@@ -260,14 +260,6 @@ class NinjaOneAdapter extends SyncAdapter implements PushableAdapter
         return $payload;
     }
 
-    private function assetValueForSourceField(Asset $asset, string $field): mixed
-    {
-        return match ($field) {
-            'asset_tag' => $asset->asset_tag,
-            default => null,
-        };
-    }
-
     /**
      * credential() throws when the key is absent. For optional fields
      * (required=false in the schema) we want a nullable read, so wrap

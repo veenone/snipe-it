@@ -332,12 +332,4 @@ class WorkspaceOneAdapter extends SyncAdapter implements PushableAdapter
             default => null,
         };
     }
-
-    private function assetValueForSourceField(Asset $asset, string $field): mixed
-    {
-        return match ($field) {
-            'asset_tag' => $asset->asset_tag,
-            default => null,
-        };
-    }
 }

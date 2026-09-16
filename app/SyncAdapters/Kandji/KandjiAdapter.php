@@ -248,17 +248,4 @@ class KandjiAdapter extends SyncAdapter implements PushableAdapter
             default => null,
         };
     }
-
-    /**
-     * Resolve a Snipe-IT source of truth for a given source-field
-     * name. Currently only asset_tag is push-supported for Kandji.
-     * Additional fields (notes, assigned_to, etc.) add cases here.
-     */
-    private function assetValueForSourceField(Asset $asset, string $field): mixed
-    {
-        return match ($field) {
-            'asset_tag' => $asset->asset_tag,
-            default => null,
-        };
-    }
 }
