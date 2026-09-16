@@ -11,7 +11,7 @@ use App\Models\Statuslabel;
 use App\Models\SyncAdapterConfig;
 use App\Models\SyncAdapterInstance;
 use App\Models\User;
-use App\SyncAdapters\Support\ConfigurableAdapter;
+use App\SyncAdapters\SyncAdapter;
 use App\SyncAdapters\Support\MappingTargets;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -154,7 +154,7 @@ class SyncHostFromAdapter
             if ($target === 'skip') {
                 continue;
             }
-            if ($adapterForDirection instanceof ConfigurableAdapter
+            if ($adapterForDirection instanceof SyncAdapter
                 && ! in_array($adapterForDirection->directionFor($field), ['pull', 'both'], true)) {
                 continue;
             }
@@ -192,7 +192,7 @@ class SyncHostFromAdapter
             return;
         }
         $adapter = $instance->adapter();
-        if (! $adapter instanceof ConfigurableAdapter) {
+        if (! $adapter instanceof SyncAdapter) {
             return;
         }
 
@@ -258,7 +258,7 @@ class SyncHostFromAdapter
         $logsHeartbeats = false;
         if ($instance !== null) {
             $adapter = $instance->adapter();
-            if ($adapter instanceof ConfigurableAdapter) {
+            if ($adapter instanceof SyncAdapter) {
                 $logsHeartbeats = $adapter->logsHeartbeats();
             }
         }
@@ -378,7 +378,7 @@ class SyncHostFromAdapter
 
         // Adapter-specific extra fields, if the adapter declares any.
         $adapter = $instance->adapter();
-        if ($adapter instanceof ConfigurableAdapter) {
+        if ($adapter instanceof SyncAdapter) {
             foreach (array_keys($adapter->extraFields()) as $extraKey) {
                 $stored = SyncAdapterConfig::get($instance->id, 'mapping.'.$extraKey);
                 if ($stored !== null) {
@@ -499,7 +499,7 @@ class SyncHostFromAdapter
     {
         if ($instance !== null) {
             $adapter = $instance->adapter();
-            if ($adapter instanceof ConfigurableAdapter) {
+            if ($adapter instanceof SyncAdapter) {
                 $configuredId = $adapter->defaultStatusId();
                 if ($configuredId !== null && Statuslabel::whereKey($configuredId)->exists()) {
                     return $configuredId;
@@ -527,13 +527,13 @@ class SyncHostFromAdapter
      * Group mappings let one adapter instance sync devices from a
      * multi-tenant vendor (Kandji, Fleet, Jamf) into per-customer
      * Snipe-IT companies without needing one adapter instance per
-     * company. See ConfigurableAdapter::groupMappings().
+     * company. See SyncAdapter::groupMappings().
      */
     private static function resolveCompanyId(HostInventoryRecord $record, ?SyncAdapterInstance $instance): ?int
     {
         if ($instance !== null && $record->vendorGroupId !== null && $record->vendorGroupId !== '') {
             $adapter = $instance->adapter();
-            if ($adapter instanceof ConfigurableAdapter && $adapter->supportsGroupScoping()) {
+            if ($adapter instanceof SyncAdapter && $adapter->supportsGroupScoping()) {
                 $mapped = $adapter->companyForVendorGroup($record->vendorGroupId);
                 if ($mapped !== null) {
                     return $mapped;
@@ -553,13 +553,13 @@ class SyncHostFromAdapter
      *
      * The pattern lets admins force a stable per-vendor tag scheme
      * (KANDJI-{serial}, FLEET-{external_id}, etc.) so re-imported
-     * assets keep their tag across reinstalls. See ConfigurableAdapter
+     * assets keep their tag across reinstalls. See SyncAdapter
      * -> assetTagPattern() for the storage side.
      */
     private static function resolveAssetTag(HostInventoryRecord $record, ?SyncAdapterInstance $instance): string
     {
         $adapter = $instance?->adapter();
-        if ($adapter instanceof ConfigurableAdapter) {
+        if ($adapter instanceof SyncAdapter) {
             $pattern = $adapter->assetTagPattern();
             if ($pattern !== null) {
                 $rendered = self::renderAssetTagPattern($pattern, $record);
@@ -805,7 +805,7 @@ class SyncHostFromAdapter
 
         if ($instance !== null) {
             $adapter = $instance->adapter();
-            if ($adapter instanceof ConfigurableAdapter) {
+            if ($adapter instanceof SyncAdapter) {
                 $configuredId = $adapter->defaultCategoryId();
                 if ($configuredId !== null && Category::whereKey($configuredId)->exists()) {
                     return $configuredId;
@@ -832,7 +832,7 @@ class SyncHostFromAdapter
             return null;
         }
         $adapter = $instance->adapter();
-        if (! $adapter instanceof ConfigurableAdapter) {
+        if (! $adapter instanceof SyncAdapter) {
             return null;
         }
         $id = $adapter->categoryIdForRecord($record);
@@ -856,7 +856,7 @@ class SyncHostFromAdapter
         }
 
         $adapter = $instance->adapter();
-        if (! $adapter instanceof ConfigurableAdapter) {
+        if (! $adapter instanceof SyncAdapter) {
             return;
         }
 
@@ -971,7 +971,7 @@ class SyncHostFromAdapter
     private static function applyUserAssignment(
         Asset $asset,
         User $user,
-        ConfigurableAdapter $adapter,
+        SyncAdapter $adapter,
         SyncAdapterInstance $instance,
     ): void {
         if ((int) $asset->assigned_to === (int) $user->id

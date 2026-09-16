@@ -5,7 +5,7 @@ namespace App\SyncAdapters\Kandji;
 use App\Models\Asset;
 use App\SyncAdapters\HostInventoryRecord;
 use App\SyncAdapters\PushableAdapter;
-use App\SyncAdapters\Support\ConfigurableAdapter;
+use App\SyncAdapters\SyncAdapter;
 use Carbon\Carbon;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Log;
@@ -16,7 +16,7 @@ use Illuminate\Support\Facades\Log;
  * objects. Also pushes Snipe-IT-authoritative fields back to Kandji
  * (asset_tag today) when the admin marks the mapping row as 'push'.
  */
-class KandjiAdapter extends ConfigurableAdapter implements PushableAdapter
+class KandjiAdapter extends SyncAdapter implements PushableAdapter
 {
     public static function typeLabel(): string
     {

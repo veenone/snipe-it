@@ -3,7 +3,7 @@
 namespace App\SyncAdapters\Addigy;
 
 use App\SyncAdapters\HostInventoryRecord;
-use App\SyncAdapters\Support\ConfigurableAdapter;
+use App\SyncAdapters\SyncAdapter;
 use Carbon\Carbon;
 use Illuminate\Support\Arr;
 
@@ -12,7 +12,7 @@ use Illuminate\Support\Arr;
  * normalizes it into HostInventoryRecord objects. Uses Addigy's
  * client-id + client-secret header pair (not bearer-token auth).
  */
-class AddigyAdapter extends ConfigurableAdapter
+class AddigyAdapter extends SyncAdapter
 {
     public static function typeLabel(): string
     {

@@ -14,7 +14,7 @@ use Tests\TestCase;
  * Smoke coverage for the Intune adapter's registration + settings-page
  * presence. Intune's schema mixes non-secret fields (tenant_id,
  * client_id) with a secret field (client_secret), so this test proves
- * the ConfigurableAdapter base's per-schema encryption dispatch works:
+ * the SyncAdapter base's per-schema encryption dispatch works:
  * secrets get encrypted at rest, plain-text fields stay plain. pull()
  * is still a stub so no sync coverage.
  */

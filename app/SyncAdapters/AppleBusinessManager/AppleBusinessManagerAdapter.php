@@ -4,7 +4,7 @@ namespace App\SyncAdapters\AppleBusinessManager;
 
 use App\Models\AssetModel;
 use App\SyncAdapters\HostInventoryRecord;
-use App\SyncAdapters\Support\ConfigurableAdapter;
+use App\SyncAdapters\SyncAdapter;
 use Carbon\Carbon;
 use Illuminate\Support\Arr;
 
@@ -32,7 +32,7 @@ use Illuminate\Support\Arr;
  * Push: not implemented. Apple's write endpoints (device metadata,
  * MDM server assignment) are outside Snipe-IT's authoritative scope.
  */
-class AppleBusinessManagerAdapter extends ConfigurableAdapter
+class AppleBusinessManagerAdapter extends SyncAdapter
 {
     /**
      * Apple's fixed productFamily enum -> friendly display name.

@@ -5,7 +5,7 @@ namespace App\SyncAdapters\Mosyle;
 use App\Models\Asset;
 use App\SyncAdapters\HostInventoryRecord;
 use App\SyncAdapters\PushableAdapter;
-use App\SyncAdapters\Support\ConfigurableAdapter;
+use App\SyncAdapters\SyncAdapter;
 use Carbon\Carbon;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Log;
@@ -18,7 +18,7 @@ use Illuminate\Support\Facades\Log;
  * authoritative asset_tag back via Mosyle's serial-number-scoped
  * set_asset_tag operation.
  */
-class MosyleAdapter extends ConfigurableAdapter implements PushableAdapter
+class MosyleAdapter extends SyncAdapter implements PushableAdapter
 {
     public static function typeLabel(): string
     {

@@ -3,7 +3,7 @@
 namespace App\SyncAdapters\JamfSchool;
 
 use App\SyncAdapters\HostInventoryRecord;
-use App\SyncAdapters\Support\ConfigurableAdapter;
+use App\SyncAdapters\SyncAdapter;
 use Carbon\Carbon;
 use Illuminate\Support\Arr;
 
@@ -14,7 +14,7 @@ use Illuminate\Support\Arr;
  * API, separate auth model (HTTP Basic with Network ID + API Key), so
  * separate adapter.
  */
-class JamfSchoolAdapter extends ConfigurableAdapter
+class JamfSchoolAdapter extends SyncAdapter
 {
     public static function typeLabel(): string
     {

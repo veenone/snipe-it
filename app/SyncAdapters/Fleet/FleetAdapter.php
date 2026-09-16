@@ -3,7 +3,7 @@
 namespace App\SyncAdapters\Fleet;
 
 use App\SyncAdapters\HostInventoryRecord;
-use App\SyncAdapters\Support\ConfigurableAdapter;
+use App\SyncAdapters\SyncAdapter;
 use Carbon\Carbon;
 use Illuminate\Support\Arr;
 
@@ -19,7 +19,7 @@ use Illuminate\Support\Arr;
  * semantic mismatch. Revisit if Fleet exposes per-host Custom
  * Attributes on a future release.
  */
-class FleetAdapter extends ConfigurableAdapter
+class FleetAdapter extends SyncAdapter
 {
     public static function typeLabel(): string
     {

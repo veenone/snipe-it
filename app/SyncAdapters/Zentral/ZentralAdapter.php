@@ -3,7 +3,7 @@
 namespace App\SyncAdapters\Zentral;
 
 use App\SyncAdapters\HostInventoryRecord;
-use App\SyncAdapters\Support\ConfigurableAdapter;
+use App\SyncAdapters\SyncAdapter;
 use Carbon\Carbon;
 use Illuminate\Support\Arr;
 
@@ -12,7 +12,7 @@ use Illuminate\Support\Arr;
  * from every Zentral source module: Munki, Santa, MDM, Osquery, etc.)
  * and normalizes it into HostInventoryRecord objects.
  */
-class ZentralAdapter extends ConfigurableAdapter
+class ZentralAdapter extends SyncAdapter
 {
     public static function typeLabel(): string
     {

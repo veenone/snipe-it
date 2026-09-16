@@ -5,7 +5,7 @@ namespace App\SyncAdapters\CustomHttp;
 use App\Models\Asset;
 use App\SyncAdapters\HostInventoryRecord;
 use App\SyncAdapters\PushableAdapter;
-use App\SyncAdapters\Support\ConfigurableAdapter;
+use App\SyncAdapters\SyncAdapter;
 use Carbon\Carbon;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Http;
@@ -19,7 +19,7 @@ use Illuminate\Support\Facades\Log;
  * generic pull() walks the response, extracts values by dot-path,
  * and yields normalized records the framework can save.
  */
-class CustomHttpAdapter extends ConfigurableAdapter implements PushableAdapter
+class CustomHttpAdapter extends SyncAdapter implements PushableAdapter
 {
     /**
      * Cap on pagination loop iterations, to keep a misconfigured

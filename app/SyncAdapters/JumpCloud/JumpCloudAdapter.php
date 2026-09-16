@@ -3,7 +3,7 @@
 namespace App\SyncAdapters\JumpCloud;
 
 use App\SyncAdapters\HostInventoryRecord;
-use App\SyncAdapters\Support\ConfigurableAdapter;
+use App\SyncAdapters\SyncAdapter;
 use Carbon\Carbon;
 use Illuminate\Support\Arr;
 
@@ -13,7 +13,7 @@ use Illuminate\Support\Arr;
  * Auth uses the tenant's static API key in the x-api-key header, not
  * a bearer token.
  */
-class JumpCloudAdapter extends ConfigurableAdapter
+class JumpCloudAdapter extends SyncAdapter
 {
     public static function typeLabel(): string
     {

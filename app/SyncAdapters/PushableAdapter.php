@@ -8,10 +8,10 @@ use App\Models\Asset;
  * Marker + contract for adapters that support pushing Snipe-IT-owned
  * field values back to the vendor (Snipe-IT asset_tag -> vendor
  * asset_tag, Snipe-IT notes -> vendor notes, etc.). Kept separate
- * from HostInventoryAdapter so pull-only vendors (osctrl, Zentral,
+ * from SyncAdapter so pull-only vendors (osctrl, Zentral,
  * UniFi) don't have to stub anything.
  *
- * Adapters that implement this ALSO implement HostInventoryAdapter
+ * Adapters that implement this ALSO implement SyncAdapter
  * in practice — the two directions share credentials, base URL, and
  * asset identity (asset_external_sources.external_id). The interfaces
  * stay separate so an adapter can be pull-only, push-only, or both.
@@ -49,7 +49,7 @@ interface PushableAdapter
      * - Resolving the vendor-side external_id from the asset's
      *   asset_external_sources row scoped to this adapter's instance
      * - Filtering the field set to those directed 'push' via
-     *   ConfigurableAdapter::directionFor()
+     *   SyncAdapter::directionFor()
      * - Serializing each field into the vendor's expected shape
      * - Sending the write call
      *

@@ -1338,7 +1338,7 @@ class SettingsController extends Controller
         }
 
         $adapter = $instance->adapter();
-        if ($adapter === null || ! $adapter instanceof \App\SyncAdapters\Support\ConfigurableAdapter) {
+        if ($adapter === null || ! $adapter instanceof \App\SyncAdapters\SyncAdapter) {
             abort(404);
         }
 
@@ -1389,7 +1389,7 @@ class SettingsController extends Controller
         }
 
         $adapter = $instance->adapter();
-        if ($adapter === null || ! $adapter instanceof \App\SyncAdapters\Support\ConfigurableAdapter) {
+        if ($adapter === null || ! $adapter instanceof \App\SyncAdapters\SyncAdapter) {
             abort(404);
         }
 

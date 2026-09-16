@@ -8,7 +8,7 @@ use Tests\TestCase;
 /**
  * Smoke coverage for the three newest built-in adapters (Mosyle, Meraki
  * Systems Manager, Omnissa Workspace ONE). Each is a schema-only
- * declaration on top of ConfigurableAdapter. the storage / save /
+ * declaration on top of SyncAdapter. the storage / save /
  * encryption cycle is already covered by FleetSettingsPageTest,
  * AddigySettingsPageTest, and IntuneSettingsPageTest for the three
  * distinct schema shapes (single-secret, key-pair, mixed). This test

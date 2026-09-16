@@ -5,7 +5,7 @@ namespace App\SyncAdapters\Jamf;
 use App\Models\Asset;
 use App\SyncAdapters\HostInventoryRecord;
 use App\SyncAdapters\PushableAdapter;
-use App\SyncAdapters\Support\ConfigurableAdapter;
+use App\SyncAdapters\SyncAdapter;
 use Carbon\Carbon;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Log;
@@ -17,7 +17,7 @@ use Illuminate\Support\Facades\Log;
  * Snipe-IT-authoritative fields (asset_tag today) back to Jamf via
  * the /api/v1/computers-inventory-detail/{id} PATCH endpoint.
  */
-class JamfAdapter extends ConfigurableAdapter implements PushableAdapter
+class JamfAdapter extends SyncAdapter implements PushableAdapter
 {
     public static function typeLabel(): string
     {

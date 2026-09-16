@@ -3,7 +3,7 @@
 namespace App\Models;
 
 use App\SyncAdapters\AdapterRegistry;
-use App\SyncAdapters\HostInventoryAdapter;
+use App\SyncAdapters\SyncAdapter;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 
@@ -54,7 +54,7 @@ class SyncAdapterInstance extends Model
      * type is not registered (which shouldn't normally happen but can if
      * an adapter class is removed while instances still reference it).
      */
-    public function adapter(): ?HostInventoryAdapter
+    public function adapter(): ?SyncAdapter
     {
         return AdapterRegistry::hydrate($this);
     }

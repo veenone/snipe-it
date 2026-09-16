@@ -3,7 +3,7 @@
 namespace App\SyncAdapters\Osctrl;
 
 use App\SyncAdapters\HostInventoryRecord;
-use App\SyncAdapters\Support\ConfigurableAdapter;
+use App\SyncAdapters\SyncAdapter;
 use Carbon\Carbon;
 use Illuminate\Support\Arr;
 
@@ -16,7 +16,7 @@ use Illuminate\Support\Arr;
  * one of them. Set up a second sync-adapter instance per environment
  * when a single osctrl install serves multiple.
  */
-class OsctrlAdapter extends ConfigurableAdapter
+class OsctrlAdapter extends SyncAdapter
 {
     public static function typeLabel(): string
     {

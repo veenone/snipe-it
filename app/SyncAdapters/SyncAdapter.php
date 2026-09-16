@@ -1,11 +1,12 @@
 <?php
 
-namespace App\SyncAdapters\Support;
+namespace App\SyncAdapters;
 
 use App\Models\SyncAdapterConfig;
 use App\Models\SyncAdapterInstance;
 use App\Rules\ExternalUrl;
-use App\SyncAdapters\HostInventoryAdapter;
+use App\SyncAdapters\Support\MappingTargets;
+use App\SyncAdapters\Support\NotesComposer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Crypt;
 
@@ -39,7 +40,7 @@ use Illuminate\Support\Facades\Crypt;
  *   - AWS SigV4 (still three text/password fields plus a region)
  *   - Basic auth (still two fields, no new type)
  */
-abstract class ConfigurableAdapter implements HostInventoryAdapter
+abstract class SyncAdapter
 {
     public function __construct(protected readonly SyncAdapterInstance $instance) {}
 
@@ -740,7 +741,7 @@ abstract class ConfigurableAdapter implements HostInventoryAdapter
             return '';
         }
 
-        return \App\SyncAdapters\Support\NotesComposer::compose($asset, $template);
+        return NotesComposer::compose($asset, $template);
     }
 
     /**

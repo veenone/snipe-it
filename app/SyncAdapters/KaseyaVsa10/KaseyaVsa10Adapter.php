@@ -3,7 +3,7 @@
 namespace App\SyncAdapters\KaseyaVsa10;
 
 use App\SyncAdapters\HostInventoryRecord;
-use App\SyncAdapters\Support\ConfigurableAdapter;
+use App\SyncAdapters\SyncAdapter;
 use Carbon\Carbon;
 use Illuminate\Support\Arr;
 
@@ -33,7 +33,7 @@ use Illuminate\Support\Arr;
  * both are candidates for a later push implementation once we have
  * a real tenant to validate the update-endpoint shape.
  */
-class KaseyaVsa10Adapter extends ConfigurableAdapter
+class KaseyaVsa10Adapter extends SyncAdapter
 {
     public static function typeLabel(): string
     {

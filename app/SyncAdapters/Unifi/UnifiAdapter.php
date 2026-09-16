@@ -3,7 +3,7 @@
 namespace App\SyncAdapters\Unifi;
 
 use App\SyncAdapters\HostInventoryRecord;
-use App\SyncAdapters\Support\ConfigurableAdapter;
+use App\SyncAdapters\SyncAdapter;
 use Carbon\Carbon;
 use Illuminate\Support\Arr;
 
@@ -23,7 +23,7 @@ use Illuminate\Support\Arr;
  * sync-adapter instance per site (each with its own tab under
  * Settings -> Sync Adapters).
  */
-class UnifiAdapter extends ConfigurableAdapter
+class UnifiAdapter extends SyncAdapter
 {
     public static function typeLabel(): string
     {

@@ -2,7 +2,7 @@
 
 namespace App\SyncAdapters\MerakiSystemsManager;
 
-use App\SyncAdapters\Support\ConfigurableAdapter;
+use App\SyncAdapters\SyncAdapter;
 
 /**
  * Cisco Meraki Systems Manager adapter. STUB, registration + settings-
@@ -17,7 +17,7 @@ use App\SyncAdapters\Support\ConfigurableAdapter;
  * schema config rather than being discovered per-sync so admins can
  * pin a specific org when the account owns several.
  */
-class MerakiSystemsManagerAdapter extends ConfigurableAdapter
+class MerakiSystemsManagerAdapter extends SyncAdapter
 {
     public static function typeLabel(): string
     {

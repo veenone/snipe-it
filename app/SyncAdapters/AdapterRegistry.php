@@ -34,7 +34,7 @@ use App\SyncAdapters\Zentral\ZentralAdapter;
 class AdapterRegistry
 {
     /**
-     * @var array<string, class-string<HostInventoryAdapter>>
+     * @var array<string, class-string<SyncAdapter>>
      */
     private const TYPES = [
         'fleet' => FleetAdapter::class,
@@ -62,7 +62,7 @@ class AdapterRegistry
      * (which can happen if an adapter class was removed but instances
      * still reference it).
      */
-    public static function hydrate(SyncAdapterInstance $instance): ?HostInventoryAdapter
+    public static function hydrate(SyncAdapterInstance $instance): ?SyncAdapter
     {
         $class = self::TYPES[$instance->adapter_type] ?? null;
         if ($class === null) {
@@ -76,7 +76,7 @@ class AdapterRegistry
      * Load every configured instance and hydrate it as a live adapter.
      * Instances whose adapter_type isn't registered are skipped.
      *
-     * @return array<int, HostInventoryAdapter>
+     * @return array<int, SyncAdapter>
      */
     public static function allInstances(): array
     {
