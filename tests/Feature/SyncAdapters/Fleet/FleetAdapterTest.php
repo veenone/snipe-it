@@ -172,6 +172,75 @@ class FleetAdapterTest extends TestCase
         );
     }
 
+    public function test_byod_extra_is_true_when_fleet_reports_personal_enrollment()
+    {
+        // Fleet reports Apple ADUE (Account-driven User Enrollment) and
+        // Android BYOD hosts with mdm.enrollment_status = "On (personal)".
+        // Adapter surfaces this as the fleet_byod boolean extra so
+        // admins can map it to a checkbox custom field (or eventually
+        // the native assets.byod column once the mapping-target pool
+        // opens up).
+        $adapter = $this->configuredFleetAdapter();
+
+        Http::fake([
+            '*/api/latest/fleet/hosts*' => Http::sequence()
+                ->push($this->fleetHostsResponse([
+                    $this->fleetHost(id: 1, hostname: 'personal-iphone', hardware_model: 'iPhone14,5')
+                        + ['mdm' => ['enrollment_status' => 'On (personal)']],
+                ])),
+        ]);
+
+        $record = iterator_to_array($adapter->pull())[0];
+        $this->assertTrue($record->extra['fleet_byod']);
+    }
+
+    public function test_byod_extra_is_false_for_company_owned_or_non_mdm_hosts()
+    {
+        $adapter = $this->configuredFleetAdapter();
+
+        Http::fake([
+            '*/api/latest/fleet/hosts*' => Http::sequence()
+                ->push($this->fleetHostsResponse([
+                    // Company-owned MDM host: enrollment_status is a
+                    // different string. fleet_byod should be false.
+                    $this->fleetHost(id: 1, hostname: 'corp-mac', hardware_model: 'MacBookPro18,3')
+                        + ['mdm' => ['enrollment_status' => 'On (automatic)']],
+                    // Non-MDM host: mdm object omitted entirely.
+                    // fleet_byod should be false (not null).
+                    $this->fleetHost(id: 2, hostname: 'non-mdm-host', hardware_model: 'ThinkPad'),
+                ])),
+        ]);
+
+        $records = iterator_to_array($adapter->pull());
+        $this->assertFalse($records[0]->extra['fleet_byod']);
+        $this->assertFalse($records[1]->extra['fleet_byod']);
+    }
+
+    public function test_byod_extra_maps_to_native_byod_column()
+    {
+        // fleet_byod extra can be routed to the native assets.byod
+        // column via the mapping UI. When configured, the boolean
+        // extra propagates to the asset's byod flag on sync.
+        $adapter = $this->configuredFleetAdapter();
+        $instance = SyncAdapterInstance::where('slug', 'fleet')->firstOrFail();
+        SyncAdapterConfig::put($instance->id, 'mapping.fleet_byod', 'native:byod');
+
+        Http::fake([
+            '*/api/latest/fleet/hosts*' => Http::sequence()
+                ->push($this->fleetHostsResponse([
+                    $this->fleetHost(id: 1, hostname: 'personal-phone', hardware_model: 'iPhone14,5')
+                        + ['mdm' => ['enrollment_status' => 'On (personal)']],
+                ])),
+        ]);
+
+        foreach ($adapter->pull() as $record) {
+            SyncHostFromAdapter::run($record);
+        }
+
+        $asset = \App\Models\Asset::where('name', 'personal-phone')->firstOrFail();
+        $this->assertTrue((bool) $asset->byod);
+    }
+
     public function test_synced_assets_inherit_the_instance_company_id()
     {
         $company = \App\Models\Company::factory()->create();

@@ -51,6 +51,10 @@ class FleetAdapter extends SyncAdapter
             'fleet_uuid' => ['label_key' => 'admin/settings/sync_adapters.extra_uuid'],
             'fleet_status' => ['label_key' => 'admin/settings/sync_adapters.extra_status'],
             'fleet_model_marketing_name' => ['label_key' => 'admin/settings/sync_adapters.extra_model_marketing_name'],
+            'fleet_byod' => [
+                'label_key' => 'admin/settings/sync_adapters.extra_byod',
+                'type' => 'boolean',
+            ],
         ];
     }
 
@@ -184,6 +188,11 @@ class FleetAdapter extends SyncAdapter
                 'fleet_uuid' => Arr::get($host, 'uuid'),
                 'fleet_status' => Arr::get($host, 'status'),
                 'fleet_model_marketing_name' => Arr::get($host, 'hardware_marketing_name'),
+                // Fleet exposes BYOD via mdm.enrollment_status = "On
+                // (personal)" for Apple ADUE and Android BYOD hosts.
+                // Any other enrollment status (including omitted for
+                // non-MDM hosts) is treated as not-BYOD.
+                'fleet_byod' => Arr::get($host, 'mdm.enrollment_status') === 'On (personal)',
             ],
         );
     }
