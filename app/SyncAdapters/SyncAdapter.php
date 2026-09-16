@@ -690,15 +690,6 @@ abstract class SyncAdapter
     }
 
     /**
-     * Per-field direction for the sync mapping. Returns one of:
-     * - 'pull' (vendor -> Snipe-IT, default)
-     * - 'push' (Snipe-IT -> vendor)
-     * - 'skip' (no sync in either direction)
-     *
-     * Only meaningful for adapters implementing PushableAdapter. For
-     * pure pull adapters callers should always get 'pull' back.
-     */
-    /**
      * Dry-run mode for push: when true, PushableAdapter::push()
      * implementations should build the payload and log it via the
      * sync-adapters channel but skip the actual vendor API call.
