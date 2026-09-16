@@ -8,7 +8,6 @@ use App\SyncAdapters\PushableAdapter;
 use App\SyncAdapters\SyncAdapter;
 use Carbon\Carbon;
 use Illuminate\Support\Arr;
-use Illuminate\Support\Facades\Log;
 
 /**
  * Jamf Pro adapter. Pulls computer inventory via the Jamf Pro API and
@@ -168,11 +167,14 @@ class JamfAdapter extends SyncAdapter implements PushableAdapter
      */
     public function push(Asset $asset, array $changedFields = []): bool
     {
-        $externalSource = $this->pushPrologue($asset, $changedFields);
-        if ($externalSource === null) {
-            return false;
-        }
+        return $this->pushViaSinglePayload($asset, $changedFields);
+    }
 
+    /**
+     * @return array{0: array<string, mixed>, 1: array<int, string>}
+     */
+    protected function buildPushPayload(Asset $asset): array
+    {
         $payload = [];
         $touched = [];
         foreach ($this->pushDirectedFields() as $field) {
@@ -190,34 +192,16 @@ class JamfAdapter extends SyncAdapter implements PushableAdapter
             $touched[] = $path;
         }
 
-        $this->applyComposedNotesToPayload($asset, $payload, $touched);
+        return [$payload, $touched];
+    }
 
-        if ($payload === []) {
-            return false;
-        }
-
-        if ($this->isPushDryRun()) {
-            Log::channel('sync-adapters')->info(sprintf(
-                '%s push [dry-run]: would PATCH Jamf computer %s with %s',
-                $this->name(),
-                $externalSource->external_id,
-                json_encode($payload, JSON_UNESCAPED_SLASHES),
-            ));
-
-            return true;
-        }
-
+    /**
+     * @param  array<string, mixed>  $payload
+     */
+    protected function dispatchPush(\App\Models\AssetExternalSource $externalSource, array $payload): void
+    {
         $client = new JamfClient(baseUrl: $this->url(), token: $this->credential('token'));
         $client->updateComputerDetail($externalSource->external_id, $payload);
-
-        Log::channel('sync-adapters')->info(sprintf(
-            '%s push: updated Jamf computer %s at paths [%s]',
-            $this->name(),
-            $externalSource->external_id,
-            implode(', ', $touched),
-        ));
-
-        return true;
     }
 
     /**

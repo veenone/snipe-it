@@ -476,7 +476,7 @@ class CustomHttpAdapter extends SyncAdapter implements PushableAdapter
      *
      * @return array{0: array<string, mixed>, 1: array<int, string>}
      */
-    private function buildPushPayload(Asset $asset): array
+    protected function buildPushPayload(Asset $asset): array
     {
         $payload = [];
         $touched = [];

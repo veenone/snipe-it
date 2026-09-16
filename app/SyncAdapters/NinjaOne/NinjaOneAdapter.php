@@ -177,19 +177,23 @@ class NinjaOneAdapter extends SyncAdapter implements PushableAdapter
      * doesn't expose a top-level asset_tag column, so the admin must
      * pre-create a custom field in the NinjaOne dashboard and put its
      * name in the "Asset Tag Custom Field Name" schema slot. If the
-     * slot is blank, push silently no-ops (nothing to write to).
-     * If the slot has a name but no such field exists in NinjaOne,
-     * NinjaOne returns a 4xx and the error surfaces in the log.
+     * slot is blank, buildPushPayload returns empty and the template
+     * short-circuits. If the slot has a name but no such field exists
+     * in NinjaOne, NinjaOne returns a 4xx and the error surfaces via
+     * the controller's outer catch.
      *
      * @param  array<int, string>  $changedFields
      */
     public function push(Asset $asset, array $changedFields = []): bool
     {
-        $externalSource = $this->pushPrologue($asset, $changedFields);
-        if ($externalSource === null) {
-            return false;
-        }
+        return $this->pushViaSinglePayload($asset, $changedFields);
+    }
 
+    /**
+     * @return array{0: array<string, mixed>, 1: array<int, string>}
+     */
+    protected function buildPushPayload(Asset $asset): array
+    {
         $customFieldName = $this->credentialOrNull('asset_tag_custom_field');
         if ($customFieldName === null || $customFieldName === '') {
             Log::channel('sync-adapters')->info(sprintf(
@@ -198,66 +202,31 @@ class NinjaOneAdapter extends SyncAdapter implements PushableAdapter
                 $asset->id,
             ));
 
-            return false;
+            return [[], []];
         }
 
-        $payload = $this->buildCustomFieldPayload($asset, $customFieldName);
-        if ($payload === []) {
-            return false;
+        $payload = [];
+        $value = in_array('asset_tag', $this->pushDirectedFields(), true)
+            ? $this->assetValueForSourceField($asset, 'asset_tag')
+            : null;
+        if ($value !== null && $value !== '') {
+            $payload[$customFieldName] = $value;
         }
 
-        if ($this->isPushDryRun()) {
-            Log::channel('sync-adapters')->info(sprintf(
-                '%s push [dry-run]: would PATCH Ninja device %s custom-fields %s',
-                $this->name(),
-                $externalSource->external_id,
-                json_encode($payload, JSON_UNESCAPED_SLASHES),
-            ));
+        return [$payload, []];
+    }
 
-            return true;
-        }
-
+    /**
+     * @param  array<string, mixed>  $payload
+     */
+    protected function dispatchPush(\App\Models\AssetExternalSource $externalSource, array $payload): void
+    {
         $client = new NinjaOneClient(
             baseUrl: $this->url(),
             clientId: $this->credential('client_id'),
             clientSecret: $this->credential('client_secret'),
         );
         $client->updateDeviceCustomFields($externalSource->external_id, $payload);
-
-        Log::channel('sync-adapters')->info(sprintf(
-            '%s push: updated Ninja device %s custom field "%s"',
-            $this->name(),
-            $externalSource->external_id,
-            $customFieldName,
-        ));
-
-        return true;
-    }
-
-    /**
-     * Assemble the /custom-fields PATCH payload. Ninja accepts
-     * multiple field name / value pairs in one request, so asset_tag
-     * and the composed-notes target get merged when both are
-     * configured. Admin sets the notes-target field via the composed-
-     * notes fieldset override. Nothing is defaulted because Ninja
-     * has no built-in notes concept for us to guess.
-     *
-     * @return array<string, mixed>
-     */
-    private function buildCustomFieldPayload(Asset $asset, string $assetTagFieldName): array
-    {
-        $payload = [];
-
-        $value = in_array('asset_tag', $this->pushDirectedFields(), true)
-            ? $this->assetValueForSourceField($asset, 'asset_tag')
-            : null;
-        if ($value !== null && $value !== '') {
-            $payload[$assetTagFieldName] = $value;
-        }
-
-        $this->applyComposedNotesToPayload($asset, $payload);
-
-        return $payload;
     }
 
     /**
