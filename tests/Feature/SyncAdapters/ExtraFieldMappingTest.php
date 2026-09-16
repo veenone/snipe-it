@@ -7,7 +7,7 @@ use App\Models\Statuslabel;
 use App\Models\SyncAdapterConfig;
 use App\Models\SyncAdapterInstance;
 use App\SyncAdapters\Fleet\FleetAdapter;
-use App\SyncAdapters\Support\MappingTargets;
+use App\SyncAdapters\MappingTargets;
 use App\SyncAdapters\SyncHostFromAdapter;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Http;

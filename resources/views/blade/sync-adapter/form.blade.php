@@ -353,7 +353,7 @@
         </x-form.legend>
 
 
-        @foreach (\App\SyncAdapters\Support\MappingTargets::FIELDS as $mappingField)
+        @foreach (\App\SyncAdapters\MappingTargets::FIELDS as $mappingField)
             <x-form.row
                 :label="trans('admin/settings/sync_adapters.field_' . $mappingField)"
                 :name="$slug . '_mapping_' . $mappingField"
@@ -369,7 +369,7 @@
                             <div class="col-md-8">
                                 <x-input.select
                                     :name="$slug . '_mapping[' . $mappingField . ']'"
-                                    :options="\App\SyncAdapters\Support\MappingTargets::options($mappingField)"
+                                    :options="\App\SyncAdapters\MappingTargets::options($mappingField)"
                                     :selected="$adapter->mappingFor($mappingField)"
                                     style="width: 100%"
                                     :disabled="$locked"
@@ -389,7 +389,7 @@
                     @else
                         <x-input.select
                             :name="$slug . '_mapping[' . $mappingField . ']'"
-                            :options="\App\SyncAdapters\Support\MappingTargets::options($mappingField)"
+                            :options="\App\SyncAdapters\MappingTargets::options($mappingField)"
                             :selected="$adapter->mappingFor($mappingField)"
                             style="width: 100%"
                             :disabled="$locked"
@@ -446,7 +446,7 @@
                                 <div class="col-md-8">
                                     <x-input.select
                                         :name="$slug . '_mapping[' . $extraKey . ']'"
-                                        :options="\App\SyncAdapters\Support\MappingTargets::optionsForExtra($extraType, $extraAdminDefined)"
+                                        :options="\App\SyncAdapters\MappingTargets::optionsForExtra($extraType, $extraAdminDefined)"
                                         :selected="$adapter->mappingFor($extraKey)"
                                         style="width: 100%"
                                         :disabled="$locked"
@@ -466,7 +466,7 @@
                         @else
                             <x-input.select
                                 :name="$slug . '_mapping[' . $extraKey . ']'"
-                                :options="\App\SyncAdapters\Support\MappingTargets::optionsForExtra($extraType, $extraAdminDefined)"
+                                :options="\App\SyncAdapters\MappingTargets::optionsForExtra($extraType, $extraAdminDefined)"
                                 :selected="$adapter->mappingFor($extraKey)"
                                 style="width: 100%"
                                 :disabled="$locked"

@@ -7,21 +7,12 @@ use App\Models\SyncAdapterConfig;
 use App\Models\SyncAdapterInstance;
 use App\Models\User;
 use App\SyncAdapters\KaseyaVsa10\KaseyaVsa10Adapter;
-use App\SyncAdapters\Support\MappingTargets;
+use App\SyncAdapters\MappingTargets;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
-/**
- * Coverage for the VSA 10 vendor-custom-field flow:
- *  - fetching the definitions from /customfields
- *  - caching them under vendor_custom_fields
- *  - surfacing them in extraFields() with admin_defined = true
- *  - narrowing the mapping-target pool to skip + custom-only
- *  - enriching pulled records with per-device values only when at
- *    least one field has been mapped
- *  - refresh route flow via the settings controller
- */
+
 class KaseyaVsa10CustomFieldsTest extends TestCase
 {
     protected function setUp(): void
