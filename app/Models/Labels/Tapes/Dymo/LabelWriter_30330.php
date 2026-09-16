@@ -52,7 +52,7 @@ class LabelWriter_30330 extends LabelWriter
 
     public function getSupportFields()
     {
-        return 5;
+        return 4;
     }
 
     public function getSupportLogo()
