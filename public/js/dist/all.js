@@ -75343,8 +75343,7 @@ $(function () {
    * dirty and re-enabled when the values revert to the initial
    * snapshot. Useful anywhere the page has an "act on saved state"
    * control that would silently run against the OLD state if
-   * clicked with pending edits (sync-adapter Pull/Push Now, an
-   * "Impersonate" button next to permission edits, etc).
+   * clicked with pending edits (sync-adapter Pull/Push, etc)
    *
    * Attributes:
    *   - data-dirty-guard              (form) opt-in marker
@@ -75385,6 +75384,7 @@ $(function () {
       entries.sort();
       return entries.join('\n');
     }
+
     // Defer the initial snapshot to next tick so any init-time
     // form mutations (select2 syncing hidden values, custom
     // widgets, dynamic show/hide picking initial visibility) have
@@ -75416,6 +75416,64 @@ $(function () {
     form.addEventListener('input', reevaluate);
     form.addEventListener('change', reevaluate);
   });
+
+  /*
+   * Breadcrumb tab-label append.
+   *
+   * Any <a data-toggle="tab" data-breadcrumb-label="Fleet"> extends
+   * the page's breadcrumb trail with its label as a leaf crumb when
+   * that tab is active. The first time a label is appended, the
+   * previously-active leaf gets converted to a link back to the
+   * current pathname (no query string) so admins can click back to
+   * the "no tab selected" default. Non-labeled tabs restore the
+   * server-rendered leaf.
+   *
+   * Opt in on any page by adding the attribute to individual tab
+   * links. Pages with no labeled tabs skip the handler entirely.
+   */
+  if (document.querySelector('[data-toggle="tab"][data-breadcrumb-label]')) {
+    var breadcrumbLeaf = document.querySelector('.content-header .breadcrumb-item.active');
+    if (breadcrumbLeaf) {
+      var breadcrumbBaseText = breadcrumbLeaf.textContent.trim();
+      var breadcrumbBasePath = window.location.pathname;
+      var breadcrumbAppendedLeaf = null;
+      var setBreadcrumbTabLeaf = function setBreadcrumbTabLeaf(label) {
+        if (!label) {
+          if (breadcrumbAppendedLeaf) {
+            breadcrumbAppendedLeaf.remove();
+            breadcrumbAppendedLeaf = null;
+            breadcrumbLeaf.innerHTML = '';
+            breadcrumbLeaf.textContent = breadcrumbBaseText;
+            breadcrumbLeaf.classList.add('active');
+          }
+          return;
+        }
+        if (!breadcrumbAppendedLeaf) {
+          breadcrumbLeaf.classList.remove('active');
+          breadcrumbLeaf.innerHTML = '';
+          var link = document.createElement('a');
+          link.href = breadcrumbBasePath;
+          link.textContent = breadcrumbBaseText;
+          var chevron = document.createElement('i');
+          chevron.className = 'fa fa-angle-right';
+          breadcrumbLeaf.append(link, ' ', chevron);
+          breadcrumbAppendedLeaf = document.createElement('li');
+          breadcrumbAppendedLeaf.className = 'breadcrumb-item active';
+          breadcrumbLeaf.parentNode.appendChild(breadcrumbAppendedLeaf);
+        }
+        breadcrumbAppendedLeaf.textContent = label;
+      };
+      var initialLabeledActive = document.querySelector('li.active > [data-toggle="tab"][data-breadcrumb-label]');
+      if (initialLabeledActive) {
+        setBreadcrumbTabLeaf(initialLabeledActive.getAttribute('data-breadcrumb-label'));
+      }
+      document.querySelectorAll('[data-toggle="tab"]').forEach(function (tab) {
+        $(tab).on('shown.bs.tab', function (e) {
+          setBreadcrumbTabLeaf(e.target.getAttribute('data-breadcrumb-label'));
+        });
+      });
+    }
+  }
 
   // Same story for viewport resizes: bootstrap-table caches column
   // widths from the initial layout and doesn't recompute when the
@@ -75527,7 +75585,7 @@ $(document).ready(function () {
   });
 
   // Auto-init eonasdan datetimepickers. bootstrap-datepicker has a native
-  // data-provide auto-init; eonasdan does not, so we do it ourselves.
+  // data-provide auto-init. eonasdan does not, so we do it ourselves.
   // Options are read from data-attributes on the wrapper so blade components
   // can tune format/side-by-side without touching this JS.
   //
