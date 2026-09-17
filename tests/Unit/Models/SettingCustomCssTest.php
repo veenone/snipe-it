@@ -209,4 +209,62 @@ class SettingCustomCssTest extends TestCase
 
         $this->assertSame('', $out);
     }
+
+    // GHSA-v279-2q6w-g8j4 regression coverage. The old denylist
+    // required `//` after the scheme (matching only `http://`,
+    // `https://`, or `//`). `http:host:port/path` shapes carry a
+    // scheme with no authority slashes, so they slipped past. A
+    // browser still resolves this to a cross-origin fetch when the
+    // page scheme differs from the URL scheme (an https page loading
+    // `http:evil` becomes a cross-origin GET). Fix converts the check
+    // to a scheme allowlist that rejects anything starting with a
+    // URI scheme or `//`.
+    public function test_scheme_only_url_without_authority_slashes_is_stripped(): void
+    {
+        $out = $this->withCustomCss('body { background: url(http:127.0.0.1:9931/bg); }');
+
+        $this->assertStringNotContainsString('127.0.0.1', $out);
+        $this->assertStringNotContainsString('9931', $out);
+    }
+
+    // Same class, https variant.
+    public function test_scheme_only_https_url_without_authority_slashes_is_stripped(): void
+    {
+        $out = $this->withCustomCss('body { background: url(https:attacker.example:443/bg); }');
+
+        $this->assertStringNotContainsString('attacker.example', $out);
+    }
+
+    // Other schemes the old denylist didn't enumerate. The allowlist
+    // rejects every scheme uniformly, so `mailto:`, `ftp:`, `file:`,
+    // and any future custom scheme (`chrome:`, `about:`, etc.) all
+    // get rejected without needing explicit enumeration.
+    public function test_arbitrary_scheme_urls_are_stripped(): void
+    {
+        foreach (['mailto:test@example.com', 'ftp://example.com/foo', 'file:///etc/passwd', 'chrome://settings'] as $scheme) {
+            $out = $this->withCustomCss('body { background: url('.$scheme.'); }');
+            $this->assertStringNotContainsString($scheme, $out, "Expected `{$scheme}` to be stripped from url() value.");
+        }
+    }
+
+    // Positive control: legitimate same-origin relative URLs continue
+    // to render. Branding assets uploaded through the settings UI
+    // land under /uploads/, so the primary legitimate reference shape
+    // is a root-relative path starting with a single `/`.
+    public function test_root_relative_upload_path_is_preserved(): void
+    {
+        $out = $this->withCustomCss('body { background: url(/uploads/logos/branding.png); }');
+
+        $this->assertStringContainsString('/uploads/logos/branding.png', $out);
+    }
+
+    // Positive control: relative paths (no leading slash) also pass,
+    // for CSS that references sibling paths relative to its own base
+    // URL. Same-origin by construction.
+    public function test_relative_path_is_preserved(): void
+    {
+        $out = $this->withCustomCss('body { background: url(images/logo.png); }');
+
+        $this->assertStringContainsString('images/logo.png', $out);
+    }
 }

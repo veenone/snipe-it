@@ -319,9 +319,22 @@ class Setting extends Model
                 // `//attacker.example` at render time. Testing the raw
                 // literal against the scheme regex below would miss the
                 // bypass.
-                if ($value === ''
-                    || str_contains($value, '\\')
-                    || preg_match('#^(https?:)?//|^data:|^javascript:|^vbscript:#i', $value)) {
+                if ($value === '' || str_contains($value, '\\')) {
+                    return '';
+                }
+
+                // Allowlist rather than denylist: reject any value that
+                // starts with a URI scheme (`scheme:`, with or without
+                // `//`) or a protocol-relative `//`. Same-origin relative
+                // paths (`/uploads/logos/foo.png`, `images/foo.png`) pass.
+                // The old denylist required `//` after the scheme, which
+                // missed shapes like `http:127.0.0.1:9931/bg` that
+                // browsers still resolve to a cross-origin fetch when the
+                // page scheme differs from the URL scheme. Branding
+                // assets go through the settings-UI upload flow and land
+                // under /uploads/, so custom CSS never needs external
+                // scheme URLs. See GHSA-v279-2q6w-g8j4.
+                if (preg_match('#^[a-zA-Z][a-zA-Z0-9+.-]*:|^//#', $value)) {
                     return '';
                 }
 
