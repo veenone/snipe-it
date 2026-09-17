@@ -527,4 +527,92 @@ class AssetCheckoutTest extends TestCase
 
         $this->assertEquals($companiedUser->id, $nullCompanyAsset->fresh()->assigned_to);
     }
+
+    /**
+     * GHSA-6hxf-hqrc-wfrp regression coverage: the reporter's PoC
+     * exactly. An empty-pivot ("null tenant") actor holding assets.checkout
+     * would previously succeed at checking out a null-company asset to a
+     * companied user in any other company under strict FMCS, because
+     * CompanyableTrait::canCheckoutTo used $target->companies()->count()
+     * to detect an uncompanied target. That subquery re-applied the actor's
+     * Company::CompanyableScope, which for an empty-pivot actor degenerates
+     * to whereNull('companies.id') and matches zero rows, making every
+     * target look pivot-less. The fix delegates to
+     * User::canReceiveFromCompany(null), which reads company_user directly
+     * via DB::table and correctly rejects a companied target under strict
+     * mode.
+     */
+    public function test_empty_pivot_actor_cannot_check_out_null_company_asset_to_companied_user_under_strict_fmcs()
+    {
+        $this->settings->enableMultipleFullCompanySupport();
+        $this->settings->disableFloaterMode();
+
+        $company = Company::factory()->create();
+        $nullCompanyAsset = Asset::factory()->create(['company_id' => null]);
+        $companiedTarget = $company->users()->save(User::factory()->create());
+        $emptyPivotActor = User::factory()->checkoutAssets()->create();
+        $emptyPivotActor->companies()->sync([]);
+
+        $this->actingAsForApi($emptyPivotActor)
+            ->postJson(route('api.asset.checkout', $nullCompanyAsset), [
+                'checkout_to_type' => 'user',
+                'assigned_user' => $companiedTarget->id,
+            ])
+            ->assertOk()
+            ->assertStatusMessageIs('error');
+
+        $this->assertNull(
+            $nullCompanyAsset->fresh()->assigned_to,
+            'Strict FMCS must reject a null-company asset being checked out to a companied user by an empty-pivot actor.'
+        );
+
+        Event::assertNotDispatched(CheckoutableCheckedOut::class);
+    }
+
+    public function test_empty_pivot_actor_can_check_out_null_company_asset_to_empty_pivot_user_under_strict_fmcs()
+    {
+        // Positive control for the fix. The "both pivot-less" case is the
+        // null pseudo-company namespace and stays legitimately allowed.
+        $this->settings->enableMultipleFullCompanySupport();
+        $this->settings->disableFloaterMode();
+
+        $nullCompanyAsset = Asset::factory()->create(['company_id' => null]);
+        $emptyPivotTarget = User::factory()->create();
+        $emptyPivotTarget->companies()->sync([]);
+        $emptyPivotActor = User::factory()->checkoutAssets()->create();
+        $emptyPivotActor->companies()->sync([]);
+
+        $this->actingAsForApi($emptyPivotActor)
+            ->postJson(route('api.asset.checkout', $nullCompanyAsset), [
+                'checkout_to_type' => 'user',
+                'assigned_user' => $emptyPivotTarget->id,
+            ])
+            ->assertOk()
+            ->assertStatusMessageIs('success');
+
+        $this->assertEquals($emptyPivotTarget->id, $nullCompanyAsset->fresh()->assigned_to);
+    }
+
+    public function test_empty_pivot_actor_can_check_out_null_company_asset_to_companied_user_under_floater_mode()
+    {
+        // Floater mode is the setting that legitimately opens null-company
+        // items to companied users. The fix must not accidentally block this.
+        $this->settings->enableFloaterMode();
+
+        $company = Company::factory()->create();
+        $nullCompanyAsset = Asset::factory()->create(['company_id' => null]);
+        $companiedTarget = $company->users()->save(User::factory()->create());
+        $emptyPivotActor = User::factory()->checkoutAssets()->create();
+        $emptyPivotActor->companies()->sync([]);
+
+        $this->actingAsForApi($emptyPivotActor)
+            ->postJson(route('api.asset.checkout', $nullCompanyAsset), [
+                'checkout_to_type' => 'user',
+                'assigned_user' => $companiedTarget->id,
+            ])
+            ->assertOk()
+            ->assertStatusMessageIs('success');
+
+        $this->assertEquals($companiedTarget->id, $nullCompanyAsset->fresh()->assigned_to);
+    }
 }

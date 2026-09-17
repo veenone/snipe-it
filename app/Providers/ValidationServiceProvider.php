@@ -557,12 +557,12 @@ class ValidationServiceProvider extends ServiceProvider
                 return true;
             }
 
-            if (!Setting::getSettings()->full_multiple_companies_support) {
+            if (! Setting::getSettings()->full_multiple_companies_support) {
                 return true;
             }
 
             $parent = Location::withoutGlobalScopes()->find((int) $value);
-            if (!$parent) {
+            if (! $parent) {
                 return true;
             }
 
@@ -570,6 +570,23 @@ class ValidationServiceProvider extends ServiceProvider
             $childCompanyId = ($childCompanyIdRaw === null || $childCompanyIdRaw === '')
                 ? null
                 : (int) $childCompanyIdRaw;
+
+            // When the location being validated has no company_id of its
+            // own, it inherits its effective company_id from the parent
+            // location chain via Location::effectiveFmcsCompanyId. Nested
+            // locations where only the top-level ancestor carries a
+            // company_id are an intended Snipe-IT hierarchy pattern
+            // (e.g. "Acme Corp HQ" -> "Building 3" -> "Server Room" with
+            // the company_id set only on "Acme Corp HQ"), so this rule
+            // must not reject a null company_id on the location being
+            // validated. The CVE this rule closes (GHSA-jmrm-535m-cx3c)
+            // required the location being validated to have an explicit
+            // company_id pointing at a parent location in a different
+            // company_id, which is still caught below.
+            if ($childCompanyId === null) {
+                return true;
+            }
+
             $parentCompanyId = $parent->company_id === null ? null : (int) $parent->company_id;
 
             return $parentCompanyId === $childCompanyId;
