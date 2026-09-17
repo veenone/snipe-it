@@ -24,7 +24,8 @@ trait MakesWatsonValidationLoud
 {
     protected function setUpMakesWatsonValidationLoud(): void
     {
-        Event::listen('eloquent.validated: *', function ($eventName, array $payload) {
+        Event::listen('eloquent.validated: *', function () {
+            [, $payload] = func_get_args();
             [$model, $status] = $payload;
 
             if ($status === 'failed' && method_exists($model, 'throwValidationException')) {
