@@ -291,9 +291,13 @@ class UserImporter extends ItemImporter
             $user->save();
 
             // Sync company pivot when companies were specified in this row.
+            // GHSA-wwp4-qx8p-62g8: route through the FMCS-safe helper so a
+            // scoped operator running the interactive importer cannot strip
+            // the target's memberships in companies the operator cannot see.
+            // The helper short-circuits to a raw sync when the editor is
+            // null (CLI-run importer), superuser, or FMCS is off.
             if (! empty($companyIds)) {
-                $user->companies()->sync($companyIds);
-                $user->syncLegacyCompanyIdMirror();
+                $user->syncCompaniesPreservingInvisibleTo(Auth::user(), $companyIds);
             }
 
             // Update the location of any assets checked out to this user
@@ -369,11 +373,16 @@ class UserImporter extends ItemImporter
             $this->recordCreated();
 
             // Sync all resolved companies to the pivot. For single-company rows the
-            // User::created event already added company_id; sync() here is idempotent
+            // User::created event already added company_id, and sync here is idempotent
             // for that case and adds any additional companies for multi-company rows.
+            // GHSA-wwp4-qx8p-62g8: same reasoning as the update branch above.
+            // Route through the FMCS-safe helper so a scoped operator running
+            // the interactive importer cannot strip the target's memberships
+            // in companies the operator cannot see. Helper short-circuits to
+            // a raw sync when the editor is null (CLI), superuser, or FMCS
+            // is off.
             if (! empty($companyIds)) {
-                $user->companies()->sync($companyIds);
-                $user->syncLegacyCompanyIdMirror();
+                $user->syncCompaniesPreservingInvisibleTo(Auth::user(), $companyIds);
             }
 
             if (($user->email) && ($user->activated == '1')) {
