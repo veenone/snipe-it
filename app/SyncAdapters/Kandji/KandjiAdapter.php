@@ -161,25 +161,24 @@ class KandjiAdapter extends SyncAdapter implements PushableAdapter
     }
 
     /**
-     * Push Snipe-IT-authoritative fields to the vendor. Filters the
-     * asset's fields down to those marked 'push' in the mapping table
-     * for this instance, serializes them into Kandji's field-name
-     * shape, and PATCHes the device.
-     *
-     * Silently no-ops when the asset has never been synced from this
-     * instance (no asset_external_sources row -> no vendor device id
-     * to write against) or when nothing on the mapping is directed
-     * 'push'.
+     * Push Snipe-IT-authoritative fields to Kandji. Delegates to the
+     * base template, which runs the prologue guards, splices composed
+     * notes, handles the dry-run branch, and writes the success log
+     * line. Kandji provides the vendor-shape payload and the vendor
+     * dispatch call via the two hooks below.
      *
      * @param  array<int, string>  $changedFields
      */
-    public function push(Asset $asset, array $changedFields = []): void
+    public function push(Asset $asset, array $changedFields = []): bool
     {
-        $externalSource = $this->pushPrologue($asset, $changedFields);
-        if ($externalSource === null) {
-            return;
-        }
+        return $this->pushViaSinglePayload($asset, $changedFields);
+    }
 
+    /**
+     * @return array{0: array<string, mixed>, 1: array<int, string>}
+     */
+    protected function buildPushPayload(Asset $asset): array
+    {
         $payload = [];
         foreach ($this->pushDirectedFields() as $field) {
             $mapped = self::sourceFieldToKandjiField($field);
@@ -195,39 +194,16 @@ class KandjiAdapter extends SyncAdapter implements PushableAdapter
             $payload[$mapped] = $value;
         }
 
-        // Composed notes merge into the same payload so admins can
-        // push both an asset_tag AND a composed notes blob in a
-        // single API call.
-        $this->applyComposedNotesToPayload($asset, $payload);
+        return [$payload, []];
+    }
 
-        if ($payload === []) {
-            return;
-        }
-
-        // Dry-run: log the payload we WOULD send and return without
-        // hitting Kandji. Lets admins verify their config end-to-end
-        // (mapping resolution, direction, credential wiring, external_id
-        // lookup) without a real API call.
-        if ($this->isPushDryRun()) {
-            Log::channel('sync-adapters')->info(sprintf(
-                '%s push [dry-run]: would PATCH Kandji device %s with %s',
-                $this->name(),
-                $externalSource->external_id,
-                json_encode($payload, JSON_UNESCAPED_SLASHES),
-            ));
-
-            return;
-        }
-
+    /**
+     * @param  array<string, mixed>  $payload
+     */
+    protected function dispatchPush(\App\Models\AssetExternalSource $externalSource, array $payload): void
+    {
         $client = new KandjiClient(baseUrl: $this->url(), token: $this->credential('token'));
         $client->updateDevice($externalSource->external_id, $payload);
-
-        Log::channel('sync-adapters')->info(sprintf(
-            '%s push: updated Kandji device %s with fields [%s]',
-            $this->name(),
-            $externalSource->external_id,
-            implode(', ', array_keys($payload)),
-        ));
     }
 
     /**
@@ -241,19 +217,6 @@ class KandjiAdapter extends SyncAdapter implements PushableAdapter
     {
         return match ($field) {
             'asset_tag' => 'asset_tag',
-            default => null,
-        };
-    }
-
-    /**
-     * Resolve a Snipe-IT source of truth for a given source-field
-     * name. Currently only asset_tag is push-supported for Kandji.
-     * Additional fields (notes, assigned_to, etc.) add cases here.
-     */
-    private function assetValueForSourceField(Asset $asset, string $field): mixed
-    {
-        return match ($field) {
-            'asset_tag' => $asset->asset_tag,
             default => null,
         };
     }

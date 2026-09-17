@@ -57,6 +57,14 @@ interface PushableAdapter
      * row for this instance (never synced from here, so we have no
      * vendor-side id to write against).
      *
+     * Return true when the adapter actually reached out to the vendor
+     * (or logged a dry-run payload). Return false when the call was
+     * skipped for any reason (nothing to push for this asset, no
+     * external-source row, empty payload, etc.). The controller's
+     * batch runner uses the return value to distinguish "successfully
+     * pushed" from "skipped" so the flash message reflects reality
+     * instead of counting every silent no-op as a success.
+     *
      * @param  array<int, string>  $changedFields
      *                                             Optional list of source-field names (hostname, asset_tag,
      *                                             etc.) that changed and prompted this push. Implementations
@@ -64,5 +72,5 @@ interface PushableAdapter
      *                                             is in the changed set. When empty, treat as "push everything
      *                                             marked push-direction".
      */
-    public function push(Asset $asset, array $changedFields = []): void;
+    public function push(Asset $asset, array $changedFields = []): bool;
 }

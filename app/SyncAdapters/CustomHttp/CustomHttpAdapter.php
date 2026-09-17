@@ -428,16 +428,16 @@ class CustomHttpAdapter extends SyncAdapter implements PushableAdapter
      *
      * @param  array<int, string>  $changedFields
      */
-    public function push(Asset $asset, array $changedFields = []): void
+    public function push(Asset $asset, array $changedFields = []): bool
     {
         $externalSource = $this->pushPrologue($asset, $changedFields);
         if ($externalSource === null || ! $this->canPush()) {
-            return;
+            return false;
         }
 
         [$payload, $touched] = $this->buildPushPayload($asset);
         if ($payload === []) {
-            return;
+            return false;
         }
 
         // Blank push_path is allowed. Combined with a non-blank base
@@ -456,10 +456,12 @@ class CustomHttpAdapter extends SyncAdapter implements PushableAdapter
                 json_encode($payload, JSON_UNESCAPED_SLASHES),
             ));
 
-            return;
+            return true;
         }
 
         $this->dispatchPushRequest($method, $endpoint, $payload, $touched);
+
+        return true;
     }
 
     /**
@@ -474,7 +476,7 @@ class CustomHttpAdapter extends SyncAdapter implements PushableAdapter
      *
      * @return array{0: array<string, mixed>, 1: array<int, string>}
      */
-    private function buildPushPayload(Asset $asset): array
+    protected function buildPushPayload(Asset $asset): array
     {
         $payload = [];
         $touched = [];
@@ -487,7 +489,7 @@ class CustomHttpAdapter extends SyncAdapter implements PushableAdapter
             if ($path === '') {
                 continue;
             }
-            $value = self::assetValueForSourceField($asset, $field);
+            $value = $this->assetValueForSourceField($asset, $field);
             if ($value === null) {
                 continue;
             }
@@ -571,24 +573,6 @@ class CustomHttpAdapter extends SyncAdapter implements PushableAdapter
         }
 
         return $path;
-    }
-
-    /**
-     * Snipe-IT's canonical source for each push-directed standard
-     * field. Only the columns Snipe-IT owns authoritatively
-     * (hostname, serial, asset_tag, model) are pushable, so this
-     * returns null for anything else and we drop it from
-     * the payload.
-     */
-    private static function assetValueForSourceField(Asset $asset, string $field): mixed
-    {
-        return match ($field) {
-            'hostname' => $asset->name,
-            'serial' => $asset->serial,
-            'asset_tag' => $asset->asset_tag,
-            'model' => $asset->model?->name,
-            default => null,
-        };
     }
 
     public function pull(): iterable
@@ -782,19 +766,11 @@ class CustomHttpAdapter extends SyncAdapter implements PushableAdapter
         $request = Http::acceptJson()->timeout(30);
         $request = $this->applyAuth($request);
 
-        try {
-            $response = $request->get($endpoint, $queryParams)->throw();
-        } catch (\Throwable $e) {
-            Log::channel('sync-adapters')->warning(sprintf(
-                '%s pull request failed: %s',
-                $this->name(),
-                $e->getMessage(),
-            ));
-
-            return null;
-        }
-
-        return $response->json();
+        // ->throw() propagates on non-2xx so the controller can catch
+        // and render a red-flash sanitized summary. Swallowing here
+        // masked 401 (bad bearer) and 5xx as "Synced 0 host(s), 0
+        // error(s)", which reads as false success to an admin.
+        return $request->get($endpoint, $queryParams)->throw()->json();
     }
 
     /**

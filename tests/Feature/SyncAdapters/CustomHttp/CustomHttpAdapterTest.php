@@ -400,19 +400,23 @@ class CustomHttpAdapterTest extends TestCase
         $this->assertSame(1, $callCount, 'None-style must issue exactly one HTTP call.');
     }
 
-    public function test_http_failure_fails_soft_and_yields_nothing()
+    public function test_http_failure_propagates_so_controller_shows_error()
     {
-        // Vendor 500 must not crash the sync run. Adapter logs a
-        // warning and returns an empty iterable so the framework's
-        // orchestrator moves on.
+        // Vendor 5xx / auth failure must propagate rather than get
+        // swallowed. Prior behavior returned an empty iterable, which
+        // the controller flashed as a warm-fuzzy "Synced 0 host(s), 0
+        // error(s)" success. Now the exception bubbles to the
+        // controller's outer catch, which flashes a red error with
+        // the sanitized vendor summary.
         $adapter = $this->configuredAdapter([
             'field_source_id' => 'id',
         ]);
 
         Http::fake(['vendor.example/*' => Http::response(['error' => 'boom'], 500)]);
 
-        $records = iterator_to_array($adapter->pull());
-        $this->assertSame([], $records);
+        $this->expectException(\Illuminate\Http\Client\RequestException::class);
+
+        iterator_to_array($adapter->pull());
     }
 
     public function test_malformed_extras_json_is_ignored()

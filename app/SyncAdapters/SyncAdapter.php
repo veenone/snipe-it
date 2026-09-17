@@ -815,6 +815,122 @@ abstract class SyncAdapter
     }
 
     /**
+     * Resolve one of the standard source-field names (hostname,
+     * asset_tag, serial, model, notes, etc.) to the matching value
+     * on the asset. Push implementations call this when building
+     * their outgoing payload so every adapter reads Snipe-IT values
+     * the same way. Returns null for unknown source-field names,
+     * for extras (vendor-specific keys the base class can't map),
+     * or when the asset has no value for that field.
+     *
+     * Adapters with a vendor-specific extra that needs pushing
+     * override in the subclass, call parent for the standard fields,
+     * and handle the vendor-specific keys in the child branch.
+     */
+    protected function assetValueForSourceField(Asset $asset, string $field): mixed
+    {
+        return match ($field) {
+            'hostname' => $asset->name,
+            'name' => $asset->name,
+            'serial' => $asset->serial,
+            'asset_tag' => $asset->asset_tag,
+            'model' => $asset->model?->name,
+            'notes' => $asset->notes,
+            default => null,
+        };
+    }
+
+    /**
+     * Standard push() implementation for single-endpoint adapters. An
+     * adapter whose push() writes one payload to one endpoint (Kandji,
+     * Jamf, NinjaOne) overrides two hooks (buildPushPayload,
+     * dispatchPush) and delegates push() to this template.
+     *
+     * Adapters with split-endpoint pushes (Mosyle posts asset_tag and
+     * notes to separate operations, Workspace ONE splits device fields
+     * from Custom Attributes) implement push() directly and don't call
+     * this. CustomHttp also implements push() directly because its
+     * dry-run log and dispatch depend on admin-configured HTTP method
+     * and endpoint that the template can't parameterize.
+     *
+     * Success and dry-run log lines use typeLabel() plus the flat
+     * $touched list (falling back to array_keys($payload) when the
+     * adapter builds a flat-keyed payload and doesn't populate
+     * $touched). Adapters wanting vendor-specific log wording override
+     * push() directly instead of using the template.
+     *
+     * @param  array<int, string>  $changedFields
+     */
+    protected function pushViaSinglePayload(Asset $asset, array $changedFields): bool
+    {
+        $externalSource = $this->pushPrologue($asset, $changedFields);
+        if ($externalSource === null) {
+            return false;
+        }
+
+        [$payload, $touched] = $this->buildPushPayload($asset);
+        $this->applyComposedNotesToPayload($asset, $payload, $touched);
+
+        if ($payload === []) {
+            return false;
+        }
+
+        $written = $touched !== [] ? $touched : array_keys($payload);
+
+        if ($this->isPushDryRun()) {
+            \Illuminate\Support\Facades\Log::channel('sync-adapters')->info(sprintf(
+                '%s push [dry-run]: would send %s to %s device %s',
+                $this->name(),
+                json_encode($payload, JSON_UNESCAPED_SLASHES),
+                static::typeLabel(),
+                $externalSource->external_id,
+            ));
+
+            return true;
+        }
+
+        $this->dispatchPush($externalSource, $payload);
+
+        \Illuminate\Support\Facades\Log::channel('sync-adapters')->info(sprintf(
+            '%s push: updated %s device %s [%s]',
+            $this->name(),
+            static::typeLabel(),
+            $externalSource->external_id,
+            implode(', ', $written),
+        ));
+
+        return true;
+    }
+
+    /**
+     * Build the outgoing vendor payload for pushViaSinglePayload().
+     * Adapters that call pushViaSinglePayload() override this to
+     * return their payload and the flat list of dot-paths / keys that
+     * were written (for the post-push audit log). Empty payload signals
+     * "nothing to send" and the template short-circuits.
+     *
+     * @return array{0: array<string, mixed>, 1: array<int, string>}
+     */
+    protected function buildPushPayload(Asset $asset): array
+    {
+        throw new \LogicException(static::class.' calls pushViaSinglePayload() but does not override buildPushPayload().');
+    }
+
+    /**
+     * Fire the vendor HTTP call for pushViaSinglePayload(). Adapters
+     * that call pushViaSinglePayload() override this. Failures throw
+     * (the outer controller catches and renders a red-flash summary,
+     * matching the pull path). No return value: presence of the call
+     * is enough, the template logs success on its own.
+     *
+     * @param  array<string, mixed>  $payload
+     */
+    protected function dispatchPush(\App\Models\AssetExternalSource $externalSource, array $payload): void
+    {
+        throw new \LogicException(static::class.' calls pushViaSinglePayload() but does not override dispatchPush().');
+    }
+
+    /**
      * Shared prologue for every PushableAdapter::push() implementation.
      * Runs the three identical guards each adapter's push() started with
      * and returns the AssetExternalSource row when the push should
@@ -987,6 +1103,20 @@ abstract class SyncAdapter
             'template' => $template,
             'target_override' => $target === '' ? null : $target,
         ];
+    }
+
+    /**
+     * True when this instance has ANY push configuration in place
+     * (at least one field directed 'push' OR a composed-notes
+     * template + target). Used by the controller's Push Now handler
+     * to abort with a clear error before iterating asset rows when
+     * the admin hit the button on a fresh or incorrectly-configured
+     * adapter, instead of iterating N rows that each silent-no-op
+     * and reporting an inaccurate success.
+     */
+    public function hasPushConfiguration(): bool
+    {
+        return $this->pushDirectedFields() !== [] || $this->hasComposedNotesConfigured();
     }
 
     /**
