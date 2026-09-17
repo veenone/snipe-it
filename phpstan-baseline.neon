@@ -1789,6 +1789,12 @@ parameters:
 			path: app/Http/Controllers/Api/ProfileController.php
 
 		-
+			message: '#^Access to an undefined property App\\Models\\Statuslabel\:\:\$color\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Http/Controllers/Api/StatuslabelsController.php
+
+		-
 			message: '#^Access to an undefined property Illuminate\\Pagination\\LengthAwarePaginator\<int, App\\Models\\Statuslabel\>\:\:\$use_text\.$#'
 			identifier: property.notFound
 			count: 1
@@ -3349,6 +3355,12 @@ parameters:
 			path: app/Http/Controllers/SetupController.php
 
 		-
+			message: '#^Access to an undefined property App\\Models\\Statuslabel\:\:\$color\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Controllers/StatuslabelsController.php
+
+		-
 			message: '#^Access to an undefined property App\\Models\\Statuslabel\:\:\$created_by\.$#'
 			identifier: property.notFound
 			count: 1
@@ -3989,6 +4001,12 @@ parameters:
 			identifier: property.notFound
 			count: 3
 			path: app/Http/Transformers/PredefinedKitsTransformer.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Statuslabel\:\:\$color\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Transformers/StatuslabelsTransformer.php
 
 		-
 			message: '#^Access to an undefined property App\\Models\\Supplier\:\:\$accessories_count\.$#'
@@ -8555,12 +8573,6 @@ parameters:
 			identifier: nullsafe.neverNull
 			count: 2
 			path: app/Notifications/CheckoutAccessoryNotification.php
-
-		-
-			message: '#^Access to an undefined property App\\Notifications\\CheckoutAssetNotification\:\:\$settings\.$#'
-			identifier: property.notFound
-			count: 5
-			path: app/Notifications/CheckoutAssetNotification.php
 
 		-
 			message: '#^Ternary operator condition is always true\.$#'
