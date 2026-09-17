@@ -542,12 +542,67 @@ class ValidationServiceProvider extends ServiceProvider
             );
         });
 
-        // Enforces "Company must be picked" when FMCS is on AND
-        // null_company_is_floater is disabled (strict mode). Without this
-        // rule a companied non-superuser can save a form with an unset
-        // company dropdown, land a row with company_id=NULL, and then
-        // have that row instantly filtered out of their own view by the
-        // strict-mode scope. See #19192. Passes when:
+        // Enforce that a Location's parent_id references a location in the
+        // same company under FMCS. Controllers already run an equivalent
+        // check (Api/LocationsController::store + update,
+        // LocationsController::store + update, BulkLocationsController::update),
+        // but the model-level rule also catches importer, seeder, and any
+        // future programmatic save that skips the controller-level guard.
+        // withoutGlobalScopes() bypasses CompanyableScope on the parent
+        // lookup so a scoped actor sees the real record and can be
+        // compared against it, matching the pattern fmcs_location already
+        // uses above. See GHSA-jmrm-535m-cx3c.
+        Validator::extend('parent_matches_location_company', function ($attribute, $value, $parameters, $validator) {
+            if ($value === null || $value === '' || (int) $value === 0) {
+                return true;
+            }
+
+            if (!Setting::getSettings()->full_multiple_companies_support) {
+                return true;
+            }
+
+            $parent = Location::withoutGlobalScopes()->find((int) $value);
+            if (!$parent) {
+                return true;
+            }
+
+            $childCompanyIdRaw = $validator->getData()['company_id'] ?? null;
+            $childCompanyId = ($childCompanyIdRaw === null || $childCompanyIdRaw === '')
+                ? null
+                : (int) $childCompanyIdRaw;
+            $parentCompanyId = $parent->company_id === null ? null : (int) $parent->company_id;
+
+            return $parentCompanyId === $childCompanyId;
+        });
+
+        Validator::replacer('parent_matches_location_company', function ($message, $attribute, $rule, $parameters, $validator) {
+            $data = $validator->getData();
+            $parentId = $data[$attribute] ?? null;
+            $parent = $parentId ? Location::withoutGlobalScopes()->find((int) $parentId) : null;
+
+            $childCompanyIdRaw = $data['company_id'] ?? null;
+            $childCompanyId = ($childCompanyIdRaw === null || $childCompanyIdRaw === '')
+                ? null
+                : (int) $childCompanyIdRaw;
+            $childCompany = $childCompanyId ? Company::withoutGlobalScopes()->find($childCompanyId) : null;
+
+            return trans('general.error_location_parent_company', [
+                'parent' => $parent?->name ?? '?',
+                'parent_company' => $parent?->company?->name ?? trans('general.unassigned'),
+                'location_company' => $childCompany?->name ?? trans('general.unassigned'),
+            ]);
+        });
+
+        // Requires a company be picked when a companied non-superuser
+        // submits a form under strict FMCS (FMCS on and
+        // null_company_is_floater off). Null companies stay legal for
+        // null-company users (they operate in the null "pseudo-company"
+        // namespace), superusers, and system contexts (CLI, seeders,
+        // importers). Without this rule a companied user could save a
+        // form with an unset company dropdown, land a row with
+        // company_id=NULL, and then have that row instantly filtered out
+        // of their own view by the strict-mode scope. See #19192. Passes
+        // when:
         //  - FMCS is off (nothing to enforce)
         //  - null_company_is_floater is on (nulls are legal floaters)
         //  - value is present (form was filled in)
