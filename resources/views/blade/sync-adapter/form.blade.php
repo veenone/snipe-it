@@ -157,7 +157,6 @@
         :selected="old($slug . '_default_category_id', $adapter->defaultCategoryId())"
         categoryType="asset"
         :help_text="trans('admin/settings/sync_adapters.default_category_help')"
-        required
     />
 
     {{-- Default status label for auto-created assets. Required so

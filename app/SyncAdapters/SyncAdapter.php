@@ -365,7 +365,7 @@ abstract class SyncAdapter
 
         $rules = [
             $slug.'_asset_tag_pattern' => ['nullable', 'string', 'max:191', new \App\Rules\AssetTagPatternRule],
-            $slug.'_default_category_id' => ['required', 'integer', 'exists:categories,id'],
+            $slug.'_default_category_id' => ['nullable', 'integer', 'exists:categories,id'],
             $slug.'_default_status_id' => ['required', 'integer', 'exists:status_labels,id'],
             $slug.'_user_match_strategy' => ['nullable', 'string', 'in:none,email,username,username_then_email'],
         ];

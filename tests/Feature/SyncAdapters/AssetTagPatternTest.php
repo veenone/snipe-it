@@ -204,6 +204,41 @@ class AssetTagPatternTest extends TestCase
         );
     }
 
+    public function test_default_category_id_may_be_left_blank_on_save_and_triggers_discovered_hardware_fallback()
+    {
+        // The help text on the settings form advertises the Discovered
+        // Hardware fallback for blank input. Regression coverage for the
+        // form-side path: a save with an empty fleet_default_category_id
+        // must succeed (not 422), must store nothing, and must route the
+        // next sync's auto-created model into Discovered Hardware.
+        $fleet = $this->configuredFleet();
+
+        $this->actingAs(\App\Models\User::factory()->superuser()->create())
+            ->post(route('settings.adapters.save', $fleet), [
+                'fleet_url' => 'https://example.com/fleet',
+                'fleet_token' => 'fake-token',
+                'fleet_default_category_id' => '',
+                'fleet_default_status_id' => Statuslabel::factory()->rtd()->create()->id,
+            ])
+            ->assertSessionHasNoErrors()
+            ->assertRedirect();
+
+        $stored = SyncAdapterConfig::get($fleet->id, 'default_category_id');
+        $this->assertTrue($stored === null || $stored === '');
+
+        SyncAdapter::syncFromRecord(new HostInventoryRecord(
+            sourceKey: 'fleet',
+            sourceId: 'cat-blank',
+            hostname: 'wksn-blank',
+            hardwareSerial: 'SN-BLANK',
+            hardwareModel: 'Model-For-Blank-Category-Test',
+        ));
+
+        $model = \App\Models\AssetModel::where('name', 'Model-For-Blank-Category-Test')->firstOrFail();
+        $fallback = Category::where('name', 'Discovered Hardware')->firstOrFail();
+        $this->assertSame($fallback->id, (int) $model->category_id);
+    }
+
     private function configuredFleet(): SyncAdapterInstance
     {
         $instance = SyncAdapterInstance::where('slug', 'fleet')->firstOrFail();
