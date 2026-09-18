@@ -74918,6 +74918,16 @@ $(function () {
     if (minResults !== undefined) {
       options.minimumResultsForSearch = minResults === 'Infinity' ? Infinity : minResults;
     }
+    // Any select2 that lives inside a Bootstrap 3 modal has to be
+    // initialized with dropdownParent set to the modal, or the
+    // search input gets appended to <body> where Bootstrap 3's
+    // modal enforceFocus handler steals focus away from it. See
+    // the same fix on initLivewireSelect2 below for the full
+    // failure-mode explanation.
+    var $modal = $obj.closest('.modal');
+    if ($modal.length) {
+      options.dropdownParent = $modal;
+    }
     $obj.select2(options);
   });
 
@@ -74926,6 +74936,10 @@ $(function () {
     var link = $(item);
     var endpoint = link.data("endpoint");
     var select = link.data("select");
+    // Same modal-detection as the plain select2 init above: scope the
+    // dropdown panel to any enclosing Bootstrap 3 modal so its search
+    // input doesn't get its focus stolen by the modal's enforceFocus.
+    var $modal = link.closest('.modal');
     link.select2({
       /**
        * Adds an empty placeholder, allowing every select2 instance to be cleared.
@@ -74933,6 +74947,7 @@ $(function () {
        */
       placeholder: '',
       allowClear: true,
+      dropdownParent: $modal.length ? $modal : $(document.body),
       language: $('meta[name="language"]').attr('content'),
       dir: $('meta[name="language-direction"]').attr('content'),
       ajax: {
