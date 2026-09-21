@@ -19,7 +19,7 @@
 
         <x-box header="{{ $snipe_component->name }}">
 
-            <x-form.static :label="trans('general.checkin_from')">{{ $asset->present()->fullName }}</x-form.static>
+            <x-checkin.checked-out-from :target="$asset" />
 
             <x-input.quantity
                 name="checkin_qty"

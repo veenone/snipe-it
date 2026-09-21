@@ -39,7 +39,18 @@ class AccessoryCheckinController extends Controller
             default => trans('admin/hardware/form.redirect_to_type', ['type' => trans('general.user')]),
         };
 
-        return view('accessories/checkin', compact('accessory', 'target_option'))->with('backto', $backto);
+        // Hydrate the polymorphic target so the checkin form can
+        // display which user, asset, or location the accessory is
+        // currently checked out to.
+        $target = null;
+        if ($accessory_user->assigned_type && $accessory_user->assigned_to) {
+            $targetClass = $accessory_user->assigned_type;
+            if (class_exists($targetClass)) {
+                $target = $targetClass::find($accessory_user->assigned_to);
+            }
+        }
+
+        return view('accessories/checkin', compact('accessory', 'target', 'target_option'))->with('backto', $backto);
 
     }
 

@@ -23,6 +23,8 @@
                 <x-form.static :label="trans('admin/hardware/form.name')">{{ $accessory->name }}</x-form.static>
             @endif
 
+            <x-checkin.checked-out-from :target="$target ?? null" />
+
             <x-form.row
                 :label="trans('admin/hardware/form.notes')"
                 :item="$accessory"
