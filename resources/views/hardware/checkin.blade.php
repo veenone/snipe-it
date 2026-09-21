@@ -76,6 +76,8 @@
                             </x-form.row>
                         @endif
 
+                    <x-checkin.checked-out-from :target="$asset->assignedTo" />
+
                     {{-- Asset name --}}
                     <x-form.row
                         :label="trans('general.name')"
