@@ -877,24 +877,6 @@ parameters:
 			path: app/Http/Controllers/Accessories/AccessoriesController.php
 
 		-
-			message: '#^Cannot access property \$accessory_id on array\<mixed\>\|object\.$#'
-			identifier: property.nonObject
-			count: 1
-			path: app/Http/Controllers/Accessories/AccessoryCheckinController.php
-
-		-
-			message: '#^Cannot access property \$assigned_type on array\<mixed\>\|object\.$#'
-			identifier: property.nonObject
-			count: 1
-			path: app/Http/Controllers/Accessories/AccessoryCheckinController.php
-
-		-
-			message: '#^PHPDoc tag @param references unknown parameter\: \$request$#'
-			identifier: parameter.notFound
-			count: 1
-			path: app/Http/Controllers/Accessories/AccessoryCheckinController.php
-
-		-
 			message: '#^Access to an undefined property App\\Models\\Accessory\:\:\$checkout_qty\.$#'
 			identifier: property.notFound
 			count: 1
