@@ -126,6 +126,7 @@ class MosyleClient
     private function request(): PendingRequest
     {
         return Http::baseUrl(rtrim($this->baseUrl, '/'))
+            ->withOptions(['allow_redirects' => false])
             ->withToken($this->token)
             ->acceptJson()
             ->asJson()

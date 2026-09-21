@@ -76,6 +76,7 @@ class WorkspaceOneClient
         }
 
         $response = Http::asForm()
+            ->withOptions(['allow_redirects' => false])
             ->timeout(30)
             ->post(rtrim($this->authBaseUrl, '/').'/connect/token', [
                 'grant_type' => 'client_credentials',
@@ -130,6 +131,7 @@ class WorkspaceOneClient
     private function request(): PendingRequest
     {
         return Http::baseUrl(rtrim($this->apiBaseUrl, '/'))
+            ->withOptions(['allow_redirects' => false])
             ->withToken($this->bearer())
             ->withHeaders(['aw-tenant-code' => $this->tenantCode])
             ->acceptJson()

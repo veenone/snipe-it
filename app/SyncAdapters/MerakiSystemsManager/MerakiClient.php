@@ -105,6 +105,7 @@ class MerakiClient
     private function request(): PendingRequest
     {
         return Http::baseUrl(rtrim($this->baseUrl, '/'))
+            ->withOptions(['allow_redirects' => false])
             ->withHeaders(['X-Cisco-Meraki-API-Key' => $this->apiKey])
             ->acceptJson()
             ->timeout(30);

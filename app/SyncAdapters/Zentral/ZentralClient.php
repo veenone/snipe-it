@@ -58,6 +58,7 @@ class ZentralClient
     private function request(): PendingRequest
     {
         return Http::baseUrl(rtrim($this->baseUrl, '/'))
+            ->withOptions(['allow_redirects' => false])
             ->withHeaders(['Authorization' => 'Token '.$this->token])
             ->acceptJson()
             ->timeout(30);

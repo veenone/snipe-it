@@ -61,6 +61,7 @@ class JumpCloudClient
     private function request(): PendingRequest
     {
         return Http::baseUrl(rtrim($this->baseUrl, '/'))
+            ->withOptions(['allow_redirects' => false])
             ->withHeaders(['x-api-key' => $this->apiKey])
             ->acceptJson()
             ->timeout(30);

@@ -71,6 +71,7 @@ class IntuneClient
         $tokenUrl = rtrim($this->loginBaseUrl, '/').'/'.$this->tenantId.'/oauth2/v2.0/token';
 
         $response = Http::asForm()
+            ->withOptions(['allow_redirects' => false])
             ->timeout(30)
             ->post($tokenUrl, [
                 'grant_type' => 'client_credentials',
@@ -98,6 +99,7 @@ class IntuneClient
         $url = rtrim($this->graphBaseUrl, '/').'/beta/deviceManagement/managedDevices/'.$deviceId;
 
         Http::withToken($this->bearer())
+            ->withOptions(['allow_redirects' => false])
             ->asJson()
             ->acceptJson()
             ->timeout(30)
@@ -108,6 +110,7 @@ class IntuneClient
     private function request(): PendingRequest
     {
         return Http::withToken($this->bearer())
+            ->withOptions(['allow_redirects' => false])
             ->acceptJson()
             ->timeout(30);
     }

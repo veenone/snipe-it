@@ -141,6 +141,7 @@ class KaseyaVsa10Client
     private function request(): PendingRequest
     {
         return Http::baseUrl(rtrim($this->baseUrl, '/').'/api/v3')
+            ->withOptions(['allow_redirects' => false])
             ->withHeaders(['Authorization' => 'Basic '.$this->basicAuth()])
             ->acceptJson()
             ->timeout(30);

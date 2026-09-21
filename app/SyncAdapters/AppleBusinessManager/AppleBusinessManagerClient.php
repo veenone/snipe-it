@@ -155,6 +155,7 @@ class AppleBusinessManagerClient
     private function request(): PendingRequest
     {
         return Http::baseUrl($this->apiBaseUrl())
+            ->withOptions(['allow_redirects' => false])
             ->withToken($this->bearer())
             ->acceptJson()
             ->timeout(30)
@@ -177,6 +178,7 @@ class AppleBusinessManagerClient
         $assertion = $this->buildClientAssertion();
 
         $response = Http::asForm()
+            ->withOptions(['allow_redirects' => false])
             ->timeout(30)
             ->post(self::APPLE_TOKEN_ENDPOINT, [
                 'grant_type' => 'client_credentials',

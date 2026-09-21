@@ -527,7 +527,7 @@ class CustomHttpAdapter extends SyncAdapter implements PushableAdapter
      */
     private function dispatchPushRequest(string $method, string $endpoint, array $payload, array $touched): void
     {
-        $request = $this->applyAuth(Http::acceptJson()->timeout(30));
+        $request = $this->applyAuth(Http::withOptions(['allow_redirects' => false])->acceptJson()->timeout(30));
 
         try {
             $request->send($method, $endpoint, ['json' => $payload])->throw();
@@ -763,7 +763,7 @@ class CustomHttpAdapter extends SyncAdapter implements PushableAdapter
             $endpoint = $baseUrl.$pullPath;
         }
 
-        $request = Http::acceptJson()->timeout(30);
+        $request = Http::withOptions(['allow_redirects' => false])->acceptJson()->timeout(30);
         $request = $this->applyAuth($request);
 
         // ->throw() propagates on non-2xx so the controller can catch

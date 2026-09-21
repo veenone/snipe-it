@@ -77,6 +77,7 @@ class NinjaOneClient
         }
 
         $response = Http::asForm()
+            ->withOptions(['allow_redirects' => false])
             ->timeout(30)
             ->post(rtrim($this->baseUrl, '/').'/ws/oauth/token', [
                 'grant_type' => 'client_credentials',
@@ -111,6 +112,7 @@ class NinjaOneClient
     private function request(): PendingRequest
     {
         return Http::baseUrl(rtrim($this->baseUrl, '/'))
+            ->withOptions(['allow_redirects' => false])
             ->withToken($this->bearer())
             ->acceptJson()
             ->timeout(30);

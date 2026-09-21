@@ -72,6 +72,7 @@ class UnifiClient
     private function request(): PendingRequest
     {
         return Http::baseUrl(rtrim($this->baseUrl, '/'))
+            ->withOptions(['allow_redirects' => false])
             ->withHeaders(['X-API-KEY' => $this->apiKey])
             ->acceptJson()
             ->timeout(30);

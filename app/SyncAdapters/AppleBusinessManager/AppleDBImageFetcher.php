@@ -95,7 +95,8 @@ class AppleDBImageFetcher
     private static function fetchDeviceInfo(string $productType): ?array
     {
         try {
-            $response = Http::timeout(self::REQUEST_TIMEOUT_SECONDS)
+            $response = Http::withOptions(['allow_redirects' => false])
+                ->timeout(self::REQUEST_TIMEOUT_SECONDS)
                 ->acceptJson()
                 ->get(self::INFO_HOST.'/device/'.rawurlencode($productType).'.json');
         } catch (ConnectionException|RequestException $e) {
@@ -163,7 +164,8 @@ class AppleDBImageFetcher
         }
 
         try {
-            $response = Http::timeout(self::REQUEST_TIMEOUT_SECONDS)
+            $response = Http::withOptions(['allow_redirects' => false])
+                ->timeout(self::REQUEST_TIMEOUT_SECONDS)
                 ->get(sprintf('%s/device@main/%s/%s.png', self::IMAGE_HOST, rawurlencode($imageKey), rawurlencode($colorKey)));
         } catch (ConnectionException|RequestException $e) {
             Log::channel('sync-adapters')->warning(sprintf(

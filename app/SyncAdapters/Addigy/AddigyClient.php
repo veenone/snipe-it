@@ -74,6 +74,7 @@ class AddigyClient
     private function request(): PendingRequest
     {
         return Http::baseUrl(rtrim($this->baseUrl, '/'))
+            ->withOptions(['allow_redirects' => false])
             ->withHeaders([
                 'client-id' => $this->clientId,
                 'client-secret' => $this->clientSecret,
