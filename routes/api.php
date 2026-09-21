@@ -1269,6 +1269,13 @@ Route::group(['prefix' => 'v1', 'middleware' => ['api', 'api-throttle:api']], fu
             ]
         )->name('api.users.accessorieslist');
 
+        Route::get('{user}/consumables',
+            [
+                Api\UsersController::class,
+                'consumables',
+            ]
+        )->name('api.users.consumableslist');
+
         Route::get('{user}/licenses',
             [
                 Api\UsersController::class,

@@ -56,20 +56,15 @@
             @endif
 
             <!-- Serial -->
-            @can('viewKeys', $licenseSeat->license)
-            <div class="form-group">
-                <label class="col-sm-3 control-label">{{ trans('admin/licenses/form.license_key') }}
-                    <i class="fa-regular fa-clipboard js-copy-link hidden-print" data-clipboard-target=".js-copy-key" aria-hidden="true" data-tooltip="true" data-placement="top" title="{{ trans('general.copy_to_clipboard') }}">
-                        <span class="sr-only">{{ trans('general.copy_to_clipboard') }}</span>
-                    </i>
-                </label>
-                <div class="col-md-8">
-                    <p class="form-control-static">
-                       <code style="white-space: pre-wrap"><span class="js-copy-key">{{ $licenseSeat->license->serial }}</span></code>
-                    </p>
-                </div>
-            </div>
-            @endcan
+            @if ($licenseSeat->license->serial)
+                @can('viewKeys', $licenseSeat->license)
+                    <x-form.static :label="trans('admin/licenses/form.license_key')">
+                        <x-copy-to-clipboard copy_what="license_key">
+                            <code>{!! nl2br(e($licenseSeat->license->serial)) !!}</code>
+                        </x-copy-to-clipboard>
+                    </x-form.static>
+                @endcan
+            @endif
 
             <!-- Note -->
             <div class="form-group {{ $errors->has('notes') ? 'error' : '' }}">

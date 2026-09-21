@@ -5235,7 +5235,7 @@ parameters:
 		-
 			message: '#^Access to an undefined property App\\Models\\Accessory\:\:\$default_purchase_cost\.$#'
 			identifier: property.notFound
-			count: 1
+			count: 2
 			path: app/Models/Accessory.php
 
 		-
@@ -5571,7 +5571,7 @@ parameters:
 		-
 			message: '#^Access to an undefined property App\\Models\\Asset\:\:\$default_purchase_cost\.$#'
 			identifier: property.notFound
-			count: 1
+			count: 2
 			path: app/Models/Asset.php
 
 		-
@@ -6513,7 +6513,7 @@ parameters:
 		-
 			message: '#^Access to an undefined property App\\Models\\Component\:\:\$default_purchase_cost\.$#'
 			identifier: property.notFound
-			count: 1
+			count: 2
 			path: app/Models/Component.php
 
 		-
@@ -6759,7 +6759,7 @@ parameters:
 		-
 			message: '#^Access to an undefined property App\\Models\\Consumable\:\:\$default_purchase_cost\.$#'
 			identifier: property.notFound
-			count: 1
+			count: 2
 			path: app/Models/Consumable.php
 
 		-
@@ -10391,3 +10391,21 @@ parameters:
 			identifier: arguments.count
 			count: 1
 			path: routes/web.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Consumable\:\:\$pivot\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Transformers/UsersTransformer.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Relations\\Pivot\:\:\$created_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Transformers/UsersTransformer.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Relations\\Pivot\:\:\$note\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Transformers/UsersTransformer.php
