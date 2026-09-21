@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Contracts\View\View;
-use Illuminate\Http\Request;
 
 /**
  * Renders the unified calendar page. The heavy lifting (event
@@ -14,7 +13,7 @@ use Illuminate\Http\Request;
  */
 class CalendarEventsController extends Controller
 {
-    public function index(Request $request): View
+    public function index(): View
     {
         $this->authorize('canViewUsersAndCheckoutables');
 
