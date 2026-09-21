@@ -450,13 +450,18 @@ class BulkUsersController extends Controller
         // intact for same-company operations.
         $scopedConsumableIds = Consumable::whereIn('id', $consumableUserRows->pluck('consumable_id')->unique())->pluck('id');
 
+        // Filter the raw pivot rows down to the scoped-parent id sets
+        // computed above.
+        $scopedAccessoryUserRows = $accessoryUserRows->whereIn('accessory_id', $accessoryModels->pluck('id'));
+        $scopedLicenseSeats = $licenses->whereIn('license_id', $licenseModels->pluck('id'));
+
         if ($request->input('delete_user') == '1' && $users->isNotEmpty() && auth()->user()->cannot('delete', User::class)) {
             return redirect()->route('users.index')->with('error', trans('general.insufficient_permissions'));
         }
 
         $this->logItemCheckinAndDelete($assets, Asset::class);
-        $this->logAccessoriesCheckin($accessoryUserRows);
-        $this->logItemCheckinAndDelete($licenses, License::class);
+        $this->logAccessoriesCheckin($scopedAccessoryUserRows);
+        $this->logItemCheckinAndDelete($scopedLicenseSeats, License::class);
 
         Asset::whereIn('id', $assets->pluck('id'))->update([
             'status_id' => e(request('status_id')),
@@ -465,7 +470,7 @@ class BulkUsersController extends Controller
             'expected_checkin' => null,
         ]);
 
-        LicenseSeat::whereIn('id', $licenses->pluck('id'))->update(['assigned_to' => null]);
+        LicenseSeat::whereIn('id', $scopedLicenseSeats->pluck('id'))->update(['assigned_to' => null]);
 
         $scopedConsumableRowIds = $consumableUserRows
             ->whereIn('consumable_id', $scopedConsumableIds)
