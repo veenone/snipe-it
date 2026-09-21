@@ -4657,38 +4657,44 @@ parameters:
 			path: app/Listeners/LogSuccessfulLogin.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$accessories\.$#'
-			identifier: property.notFound
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:accessories\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Livewire/CheckoutTargetPanel.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:assets\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Livewire/CheckoutTargetPanel.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:assignedAccessories\(\)\.$#'
+			identifier: method.notFound
 			count: 2
 			path: app/Livewire/CheckoutTargetPanel.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$assets\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Livewire/CheckoutTargetPanel.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$assignedAssets\.$#'
-			identifier: property.notFound
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:assignedAssets\(\)\.$#'
+			identifier: method.notFound
 			count: 2
 			path: app/Livewire/CheckoutTargetPanel.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$components\.$#'
-			identifier: property.notFound
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:components\(\)\.$#'
+			identifier: method.notFound
 			count: 1
 			path: app/Livewire/CheckoutTargetPanel.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$consumables\.$#'
-			identifier: property.notFound
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:consumables\(\)\.$#'
+			identifier: method.notFound
 			count: 1
 			path: app/Livewire/CheckoutTargetPanel.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$licenses\.$#'
-			identifier: property.notFound
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:licenses\(\)\.$#'
+			identifier: method.notFound
 			count: 2
 			path: app/Livewire/CheckoutTargetPanel.php
 
@@ -10399,13 +10405,25 @@ parameters:
 			path: app/Http/Transformers/UsersTransformer.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Relations\\Pivot\:\:\$created_at\.$#'
+			message: '#^Access to an undefined property App\\Models\\Accessory\:\:\$pivot\.$#'
 			identifier: property.notFound
 			count: 1
 			path: app/Http/Transformers/UsersTransformer.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Relations\\Pivot\:\:\$note\.$#'
+			message: '#^Access to an undefined property App\\Models\\License\:\:\$pivot\.$#'
 			identifier: property.notFound
 			count: 1
+			path: app/Http/Transformers/UsersTransformer.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Relations\\Pivot\:\:\$created_at\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Transformers/UsersTransformer.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Relations\\Pivot\:\:\$note\.$#'
+			identifier: property.notFound
+			count: 2
 			path: app/Http/Transformers/UsersTransformer.php
