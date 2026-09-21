@@ -565,14 +565,7 @@
                                 </li>
                             @endif
 
-                            @can('view', \App\Models\Asset::class)
-                                <li{!! (request()->routeIs('calendar.index') ? ' class="active" aria-current="page"' : '') !!}>
-                                    <a href="{{ route('calendar.index') }}">
-                                        <x-icon type="calendar" class="fa-fw"/>
-                                        <span>{{ trans('general.calendar') }}</span>
-                                    </a>
-                            </li>
-                        @endcan
+
                         @can('view', \App\Models\License::class)
                             <li{!! (request()->is('licenses*') ? ' class="active" aria-current="page"' : '') !!}>
                                 <a href="{{ route('licenses.index') }}">
@@ -662,6 +655,14 @@
                                     </ul>
                                 </li>
                         @endcan
+                            @can('canViewUsersAndCheckoutables')
+                                <li{!! (request()->routeIs('calendar.index') ? ' class="active" aria-current="page"' : '') !!}>
+                                    <a href="{{ route('calendar.index') }}">
+                                        <x-icon type="calendar" class="fa-fw"/>
+                                        <span>{{ trans('general.calendar') }}</span>
+                                    </a>
+                                </li>
+                            @endcan
                         @can('import')
                             <li id="import-sidenav-option"{!! (request()->is('import*') ? ' class="active" aria-current="page"' : '') !!}>
                                 <a href="{{ route('imports.index') }}">

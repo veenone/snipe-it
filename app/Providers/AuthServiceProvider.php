@@ -5,6 +5,7 @@ namespace App\Providers;
 use App\Models\Accessory;
 use App\Models\Asset;
 use App\Models\AssetModel;
+use App\Models\CalendarEvent;
 use App\Models\Category;
 use App\Models\CheckoutRequest;
 use App\Models\Company;
@@ -220,6 +221,24 @@ class AuthServiceProvider extends ServiceProvider
                 || $user->can('checkout', Consumable::class)
                 || $user->can('checkout', Component::class)
                 || $user->can('checkout', License::class);
+        });
+
+        // True when the user can view at least one HasCalendarEvents
+        // adopter. Named for the underlying question ("does this user
+        // have any read access to fleet items or people?") rather
+        // than a specific surface, so it reads sensibly for the
+        // calendar sidenav gate + any future consumer that wants to
+        // check the same shape. Delegates to
+        // CalendarEvent::sourceModels() so a new adopter of the
+        // HasCalendarEvents trait is picked up automatically.
+        Gate::define('canViewUsersAndCheckoutables', function ($user) {
+            foreach (CalendarEvent::sourceModels() as $sourceClass) {
+                if ($user->can('view', $sourceClass)) {
+                    return true;
+                }
+            }
+
+            return false;
         });
 
         Gate::define('assets.view.encrypted_custom_fields', function ($user) {
