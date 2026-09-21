@@ -500,9 +500,9 @@ class Consumable extends SnipeModel
      */
     public function scopeOrderRemaining($query, $order)
     {
-        $order_by = 'consumables.qty - consumables_users_count '.$order;
+        $order = strtolower($order) === 'asc' ? 'asc' : 'desc';
 
-        return $query->orderByRaw($order_by);
+        return $query->orderByRaw('consumables.qty - consumables_users_count '.$order);
     }
 
     /**

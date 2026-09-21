@@ -349,8 +349,12 @@ final class Company extends SnipeModel
             return true;
         }
 
-        // Again, where would this happen? But check that $companyable is not a string
-        if (! is_string($companyable)) {
+        // Skip the hasColumn early-return for User targets. users.company_id
+        // was renamed to legacy_company_id, so hasColumn would now return false
+        // for every User and short-circuit the per-target check further down
+        // (which is the back-patch for #19187). User targets defer to
+        // CompanyableScope in the auth block below.
+        if (! is_string($companyable) && ! ($companyable instanceof User)) {
             $company_table = $companyable->getModel()->getTable();
             try {
                 // This is primarily for the gate:allows-check in location->isDeletable()
