@@ -12,7 +12,6 @@ use App\Http\Requests\SaveUserRequest;
 use App\Http\Transformers\AccessoriesTransformer;
 use App\Http\Transformers\ActionlogsTransformer;
 use App\Http\Transformers\AssetsTransformer;
-use App\Http\Transformers\ConsumablesTransformer;
 use App\Http\Transformers\LicensesTransformer;
 use App\Http\Transformers\SelectlistTransformer;
 use App\Http\Transformers\UsersTransformer;
@@ -881,13 +880,12 @@ class UsersController extends Controller
     }
 
     /**
-     * Return JSON containing a list of consumables assigned to a user.
+     * Return JSON containing a paginated list of consumable checkouts
+     * assigned to a user. One row per consumables_users pivot entry.
      *
      * @author [A. Gianotto] [<snipe@snipe.net>]
      *
      * @since [v3.0]
-     *
-     * @param  $userId
      */
     public function consumables(Request $request, $id): array
     {
@@ -895,9 +893,28 @@ class UsersController extends Controller
         $this->authorize('view', Consumable::class);
         $user = User::findOrFail($id);
         $this->authorize('view', $user);
-        $consumables = $user->consumables;
 
-        return (new ConsumablesTransformer)->transformConsumables($consumables, $consumables->count(), $request);
+        $query = $user->consumables();
+
+        $total = $query->count();
+        $offset = ($request->input('offset') > $total) ? $total : app('api_offset_value');
+        $limit = app('api_limit_value');
+
+        $sortColumn = $request->input('sort') === 'name'
+            ? 'consumables.name'
+            : 'consumables_users.created_at';
+        $order = $request->input('order') === 'asc' ? 'asc' : 'desc';
+
+        $consumables = $query
+            ->orderBy($sortColumn, $order)
+            ->skip($offset)
+            ->take($limit)
+            ->get();
+
+        $unitCostsById = Consumable::lastUnitCostsFor($consumables);
+
+        return (new UsersTransformer)
+            ->transformUserConsumables($consumables, $unitCostsById, $total);
     }
 
     /**

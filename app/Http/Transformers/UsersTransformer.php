@@ -3,6 +3,7 @@
 namespace App\Http\Transformers;
 
 use App\Helpers\Helper;
+use App\Models\Consumable;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Gate;
@@ -230,5 +231,45 @@ class UsersTransformer
     public function transformUsersDatatable($users)
     {
         return (new DatatablesTransformer)->transformDatatables($users);
+    }
+
+    /**
+     * @param  Collection<int, Consumable>  $consumables
+     * @param  array<int, string|null>  $unitCostsById
+     * @return array<string, mixed>
+     */
+    public function transformUserConsumables(Collection $consumables, array $unitCostsById, int $total): array
+    {
+        $rows = [];
+        foreach ($consumables as $consumable) {
+            $rows[] = $this->transformUserConsumableRow($consumable, $unitCostsById);
+        }
+
+        return (new DatatablesTransformer)->transformDatatables($rows, $total);
+    }
+
+    /**
+     * @param  array<int, string|null>  $unitCostsById
+     * @return array<string, mixed>
+     */
+    private function transformUserConsumableRow(Consumable $consumable, array $unitCostsById): array
+    {
+        $unitCost = $unitCostsById[$consumable->id] ?? null;
+        /** @var \Illuminate\Database\Eloquent\Relations\Pivot $pivot */
+        $pivot = $consumable->pivot;
+
+        return [
+            'id' => (int) $pivot->id,
+            'consumable' => [
+                'id' => (int) $consumable->id,
+                'name' => e($consumable->name),
+            ],
+            'name' => e($consumable->name),
+            'image' => $consumable->getImageUrl() ?: null,
+            'qty' => 1,
+            'purchase_cost' => Helper::formatCurrencyOutput($unitCost),
+            'created_at' => Helper::getFormattedDateObject($pivot->created_at, 'datetime'),
+            'note' => $pivot->note ? e($pivot->note) : null,
+        ];
     }
 }

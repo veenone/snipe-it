@@ -469,40 +469,15 @@
 
                     <x-tabs.pane name="consumables" :count="$user->consumables()->count()">
                         @can('view', \App\Models\Consumable::class)
-                        <table
-                            data-cookie-id-table="userConsumableTable"
-                            data-id-table="userConsumableTable"
-                            id="userConsumableTable"
-                            data-buttons="consumableButtons"
-                            data-side-pagination="client"
-                            data-show-footer="true"
-                            data-sort-name="name"
-                            class="table table-striped snipe-table table-hover"
-                            data-export-options='{
-                    "fileName": "export-consumable-{{ str_slug($user->username) }}-{{ date('Y-m-d') }}",
-                    "ignoreColumn": ["actions","image","change","checkbox","checkincheckout","delete","download","icon"]
-                    }'>
-                            <thead>
-                                <tr>
-                                    <th scope="col" class="col-md-3">{{ trans('general.name') }}</th>
-                                    <th scope="col" class="col-md-2" data-footer-formatter="sumFormatter" data-fieldname="purchase_cost">{{ trans('general.unit_cost') }}</th>
-                                    <th scope="col" class="col-md-2">{{ trans('general.date') }}</th>
-                                    <th scope="col" class="col-md-5">{{ trans('general.notes') }}</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach ($user->consumables as $consumable)
-                                    <tr>
-                                        <td>{!! $consumable->present()->nameUrl() !!}</td>
-                                        <td>
-                                            {!! Helper::formatCurrencyOutput($consumable->lastOrderDefaults()['unit_cost'] ?? null) !!}
-                                        </td>
-                                        <td>{{ Helper::getFormattedDateObject($consumable->pivot->created_at, 'datetime',  false) }}</td>
-                                        <td>{{ $consumable->pivot->note }}</td>
-                                    </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
+                        <x-table
+                            name="userConsumableTable"
+                            show_column_search="false"
+                            show_footer="true"
+                            buttons="consumableButtons"
+                            api_url="{{ route('api.users.consumableslist', ['user' => $user->id]) }}"
+                            :presenter="\App\Presenters\UserPresenter::consumablesDataTableLayout()"
+                            export_filename="export-consumable-{{ str_slug($user->username) }}-{{ date('Y-m-d') }}"
+                        />
                         @endcan
 
                     </x-tabs.pane>

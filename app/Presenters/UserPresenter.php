@@ -628,4 +628,63 @@ class UserPresenter extends Presenter
         return $this->model->department?->tag_color
             ?? $this->model->company?->color;
     }
+
+    public static function consumablesDataTableLayout(): string
+    {
+        $layout = [
+            [
+                'field' => 'consumable',
+                'scope' => 'col',
+                'searchable' => true,
+                'sortable' => true,
+                'switchable' => false,
+                'title' => trans('general.name'),
+                'visible' => true,
+                'formatter' => 'consumablesLinkObjFormatter',
+            ],
+            [
+                'field' => 'qty',
+                'scope' => 'col',
+                'searchable' => false,
+                'sortable' => false,
+                'switchable' => true,
+                'title' => trans('general.qty'),
+                'visible' => true,
+                'footerFormatter' => 'sumFormatter',
+                'class' => 'text-right',
+            ],
+            [
+                'field' => 'purchase_cost',
+                'scope' => 'col',
+                'searchable' => false,
+                'sortable' => false,
+                'switchable' => true,
+                'title' => trans('general.unit_cost'),
+                'visible' => true,
+                'footerFormatter' => 'sumFormatter',
+                'class' => 'text-right',
+            ],
+            [
+                'field' => 'created_at',
+                'scope' => 'col',
+                'searchable' => false,
+                'sortable' => true,
+                'switchable' => true,
+                'title' => trans('general.date'),
+                'visible' => true,
+                'formatter' => 'dateDisplayFormatter',
+            ],
+            [
+                'field' => 'note',
+                'scope' => 'col',
+                'searchable' => true,
+                'sortable' => false,
+                'switchable' => true,
+                'title' => trans('general.notes'),
+                'visible' => true,
+            ],
+        ];
+
+        return json_encode($layout);
+    }
 }
