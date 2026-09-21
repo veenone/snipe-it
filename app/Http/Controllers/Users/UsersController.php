@@ -221,7 +221,7 @@ class UsersController extends Controller
         if ($safeReferer = Helper::sameOriginUrl(url()->previous())) {
             session()->put('url.intended', $safeReferer);
         }
-        $user = User::with(['assets', 'assets.model', 'consumables', 'accessories', 'licenses', 'userloc'])->withTrashed()->find($user->id);
+        $user = User::withTrashed()->find($user->id);
 
         if ($user) {
 
@@ -271,8 +271,6 @@ class UsersController extends Controller
         // permissions here before we update the user.
         $permissions = $request->input('permissions', []);
         app('request')->request->set('permissions', $permissions);
-
-        $user->load(['assets', 'assets.model', 'consumables', 'accessories', 'licenses', 'userloc'])->withTrashed();
 
         $this->authorize('update', $user);
 
@@ -458,14 +456,9 @@ class UsersController extends Controller
         $this->authorize('view', $user);
 
         $user = User::with([
-            'consumables',
-            'accessories',
-            'licenses',
             'userloc',
             'groups',
-        ])
-            ->withTrashed()
-            ->find($user->id);
+        ])->withTrashed()->find($user->id);
 
         // Make sure they can view this particular user
         $this->authorize('view', $user);

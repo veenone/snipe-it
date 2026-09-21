@@ -3,7 +3,9 @@
 namespace App\Http\Transformers;
 
 use App\Helpers\Helper;
+use App\Models\Accessory;
 use App\Models\Consumable;
+use App\Models\License;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Gate;
@@ -270,6 +272,109 @@ class UsersTransformer
             'purchase_cost' => Helper::formatCurrencyOutput($unitCost),
             'created_at' => Helper::getFormattedDateObject($pivot->created_at, 'datetime'),
             'note' => $pivot->note ? e($pivot->note) : null,
+        ];
+    }
+
+    /**
+     * @param  Collection<int, Accessory>  $accessories
+     * @param  array<int, string|null>  $unitCostsById
+     * @return array<string, mixed>
+     */
+    public function transformUserAccessories(Collection $accessories, array $unitCostsById, int $total): array
+    {
+        $rows = [];
+        foreach ($accessories as $accessory) {
+            $rows[] = $this->transformUserAccessoryRow($accessory, $unitCostsById);
+        }
+
+        return (new DatatablesTransformer)->transformDatatables($rows, $total);
+    }
+
+    /**
+     * @param  array<int, string|null>  $unitCostsById
+     * @return array<string, mixed>
+     */
+    private function transformUserAccessoryRow(Accessory $accessory, array $unitCostsById): array
+    {
+        $unitCost = $unitCostsById[$accessory->id] ?? null;
+        /** @var \Illuminate\Database\Eloquent\Relations\Pivot $pivot */
+        $pivot = $accessory->pivot;
+
+        return [
+            // row.id is the pivot id, which
+            // genericCheckinCheckoutFormatter uses to build the
+            // checkin URL when assigned_to is populated.
+            'id' => (int) $pivot->id,
+            'accessory' => [
+                'id' => (int) $accessory->id,
+                'name' => e($accessory->name),
+            ],
+            'name' => e($accessory->name),
+            'image' => $accessory->getImageUrl() ?: null,
+            'purchase_cost' => Helper::formatCurrencyOutput($unitCost),
+            'created_at' => Helper::getFormattedDateObject($pivot->created_at, 'datetime'),
+            'note' => $pivot->note ? e($pivot->note) : null,
+            // Truthy assigned_to flags this row as "checked out" so
+            // genericCheckinCheckoutFormatter's checkin branch fires.
+            'assigned_to' => (int) ($pivot->assigned_to ?? 0),
+            'checkin_backto' => 'user',
+            'available_actions' => [
+                'checkin' => Gate::allows('checkin', $accessory),
+            ],
+        ];
+    }
+
+    /**
+     * @param  Collection<int, License>  $licenses
+     * @return array<string, mixed>
+     */
+    public function transformUserLicenses(Collection $licenses, int $total): array
+    {
+        $rows = [];
+        foreach ($licenses as $license) {
+            $rows[] = $this->transformUserLicenseRow($license);
+        }
+
+        return (new DatatablesTransformer)->transformDatatables($rows, $total);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function transformUserLicenseRow(License $license): array
+    {
+        /** @var \Illuminate\Database\Eloquent\Relations\Pivot $pivot */
+        $pivot = $license->pivot;
+        $canViewKeys = Gate::allows('viewKeys', $license);
+
+        return [
+            // row.id is the LicenseSeat id, which
+            // licenseSeatInOutFormatter uses to build the checkin
+            // URL. Note that row.license.id is the parent License
+            // id, used for checkout URLs by the same formatter.
+            'id' => (int) $pivot->id,
+            'license' => [
+                'id' => (int) $license->id,
+                'name' => e($license->name),
+            ],
+            'license_id' => (int) $license->id,
+            'name' => e($license->name),
+            'serial' => $canViewKeys ? e($license->serial) : null,
+            'purchase_cost' => Helper::formatCurrencyOutput($license->purchase_cost),
+            'purchase_order' => e($license->purchase_order),
+            'order_number' => e($license->order_number),
+            // Truthy assigned_user tells licenseSeatInOutFormatter
+            // this seat is checked out to a user, so the checkin
+            // branch fires. asset_id / assigned_asset stay unset
+            // because a seat cannot be assigned to both at once.
+            'assigned_user' => (int) ($pivot->assigned_to ?? 0) ?: null,
+            'checkin_backto' => 'user',
+            'available_actions' => [
+                'checkin' => Gate::allows('update', $license),
+                'bulk_selectable' => [
+                    'checkin' => Gate::allows('checkin', $license),
+                ],
+            ],
         ];
     }
 }
