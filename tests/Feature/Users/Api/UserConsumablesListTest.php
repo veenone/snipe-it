@@ -76,6 +76,38 @@ class UserConsumablesListTest extends TestCase
         $this->assertNotNull($response['prev_page_url']);
     }
 
+    public function test_search_filters_by_consumable_name_and_pivot_note(): void
+    {
+        $user = User::factory()->create();
+        $pens = Consumable::factory()->create(['name' => 'Ballpoint Pens']);
+        $paper = Consumable::factory()->create(['name' => 'Copier Paper']);
+
+        DB::table('consumables_users')->insert([
+            ['consumable_id' => $pens->id, 'assigned_to' => $user->id, 'created_at' => now(), 'note' => 'urgent'],
+            ['consumable_id' => $paper->id, 'assigned_to' => $user->id, 'created_at' => now(), 'note' => 'routine'],
+        ]);
+
+        $caller = User::factory()->viewUsers()->viewConsumables()->create();
+
+        $byName = $this->actingAsForApi($caller)
+            ->getJson(route('api.users.consumableslist', ['user' => $user->id, 'search' => 'Ballpoint']))
+            ->assertOk()
+            ->json();
+        $this->assertSame(1, $byName['total']);
+
+        $byNote = $this->actingAsForApi($caller)
+            ->getJson(route('api.users.consumableslist', ['user' => $user->id, 'search' => 'urgent']))
+            ->assertOk()
+            ->json();
+        $this->assertSame(1, $byNote['total']);
+
+        $miss = $this->actingAsForApi($caller)
+            ->getJson(route('api.users.consumableslist', ['user' => $user->id, 'search' => 'zzz-nomatch']))
+            ->assertOk()
+            ->json();
+        $this->assertSame(0, $miss['total']);
+    }
+
     public function test_endpoint_resolves_last_unit_cost_in_one_grouped_query(): void
     {
         // Regression test for the reason this endpoint exists at all.
